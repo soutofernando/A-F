@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR>=170 && NR<=182' \"c:/Users/Pichau/Desktop/a&f/Alicia e Fernando - Offline.html\")",
+      "Bash(node unpack.mjs)",
+      "Bash(node inspect.mjs)",
+      "Bash(grep -oE '\"[A-Z][a-zA-ZÀ-ÿ ]{3,40}\"' 2c049ae2-424f-431f-b2cf-549e7fcf7da6)",
+      "Bash(pnpm --version)",
+      "Bash(mkdir -p _reference)",
+      "Bash(mv \"Alicia e Fernando - Offline.html\" unpack.mjs inspect.mjs template.json prototype _reference/)",
+      "Bash(grep -oE '@keyframes [a-zA-Z]+\\\\\\\\?\\\\{[^@]+?\\\\}\\\\s*\\\\}' template.json)",
+      "Bash(node -e ' *)",
+      "Bash(pnpm create *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm dev *)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code} | %{size_download} bytes | %{time_total}s\\\\n\" http://localhost:3001/)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code} bytes=%{size_download}\\\\n\" http://localhost:3001/rsvp http://localhost:3001/presentes http://localhost:3001/cerimonia)"
+    ]
+  }
+}
