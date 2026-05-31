@@ -1,0 +1,236 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin — animações globais e estados visuais
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes admin-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes admin-shimmer {
+  0%   { opacity: .4; }
+  50%  { opacity: 1; }
+  100% { opacity: .4; }
+}
+
+.admin-fade-up {
+  animation: admin-fade-up .55s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+.admin-stagger > * {
+  animation: admin-fade-up .55s cubic-bezier(.2, .7, .2, 1) both;
+}
+.admin-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.admin-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.admin-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.admin-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.admin-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.admin-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.admin-stagger > *:nth-child(7) { animation-delay: 360ms; }
+.admin-stagger > *:nth-child(8) { animation-delay: 420ms; }
+.admin-stagger > *:nth-child(9) { animation-delay: 480ms; }
+
+/* ── Card hoverable ──────────────────────────────────────────────── */
+.admin-card {
+  transition: border-color .3s ease, transform .3s ease, background .3s ease;
+}
+.admin-card-link:hover {
+  border-color: rgba(212, 175, 122, .35);
+  transform: translateY(-2px);
+  background: #15110f;
+}
+.admin-card-link:hover .admin-card-arrow {
+  color: var(--gold-soft);
+  transform: translateX(4px);
+}
+.admin-card-arrow {
+  transition: transform .3s ease, color .3s ease;
+}
+
+/* ── Inputs / Selects / Textareas ─────────────────────────────────── */
+.admin-input {
+  transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+}
+.admin-input:focus,
+.admin-input:focus-visible {
+  border-color: rgba(212, 175, 122, .55);
+  background: #110D0B;
+  box-shadow: 0 0 0 3px rgba(212, 175, 122, .07);
+}
+.admin-input:hover:not(:focus) {
+  border-color: rgba(239, 231, 219, .28);
+}
+.admin-input::placeholder {
+  color: rgba(239, 231, 219, .3);
+}
+
+/* ── Botões ───────────────────────────────────────────────────────── */
+.admin-btn {
+  transition: background .25s ease, color .25s ease, border-color .25s ease, transform .15s ease;
+}
+.admin-btn:hover {
+  background: rgba(239, 231, 219, .06);
+}
+.admin-btn:active {
+  transform: scale(.98);
+}
+.admin-btn-gold:hover {
+  background: rgba(212, 175, 122, .1);
+}
+.admin-btn-danger:hover {
+  background: rgba(224, 142, 142, .1);
+}
+
+/* ── Linhas de tabela ─────────────────────────────────────────────── */
+.admin-row {
+  transition: background .2s ease;
+}
+.admin-row:hover {
+  background: rgba(239, 231, 219, .03);
+}
+
+/* ── Pílulas de status ────────────────────────────────────────────── */
+.admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 10px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+.admin-pill::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.admin-pill-success { color: #7ed98a; }
+.admin-pill-danger  { color: #e08e8e; }
+.admin-pill-muted   { color: rgba(239, 231, 219, .45); border-color: rgba(239, 231, 219, .25); }
+.admin-pill-muted::before { background: rgba(239, 231, 219, .45); }
+.admin-pill-gold    { color: var(--gold-soft); }
+
+/* ── Stat cards ──────────────────────────────────────────────────── */
+.admin-stat {
+  background: #141110;
+  border: 1px solid rgba(239, 231, 219, .08);
+  padding: 22px 22px 20px;
+  transition: border-color .25s ease;
+}
+.admin-stat:hover {
+  border-color: rgba(212, 175, 122, .25);
+}
+.admin-stat-value {
+  font-family: var(--font-serif, 'Cormorant Garamond', serif);
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--cream);
+}
+.admin-stat-label {
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 9px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+  margin-bottom: 10px;
+}
+.admin-stat-meta {
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 11px;
+  color: rgba(239, 231, 219, .5);
+  margin-top: 6px;
+}
+
+/* ── Section header ──────────────────────────────────────────────── */
+.admin-section-title {
+  font-family: var(--font-serif), serif;
+  font-style: italic;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--cream);
+  margin-bottom: 4px;
+}
+.admin-section-sub {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(239, 231, 219, .45);
+}
+
+/* ── Image grid ──────────────────────────────────────────────────── */
+.admin-img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.admin-img-tile {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #0E0B09;
+  border: 1px solid rgba(239, 231, 219, .12);
+  overflow: hidden;
+  transition: border-color .25s ease, transform .25s ease;
+}
+.admin-img-tile:hover {
+  border-color: rgba(212, 175, 122, .4);
+  transform: translateY(-2px);
+}
+.admin-img-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease;
+}
+.admin-img-tile:hover img {
+  transform: scale(1.04);
+}
+.admin-img-tile-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,0) 50%);
+  opacity: 0;
+  transition: opacity .25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px;
+  gap: 6px;
+}
+.admin-img-tile:hover .admin-img-tile-overlay {
+  opacity: 1;
+}
+.admin-img-tile-meta {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px;
+  color: rgba(239, 231, 219, .8);
+  letter-spacing: .1em;
+}
+
+/* ── Sidebar nav active indicator (acessório) ─────────────────────── */
+.admin-nav-item {
+  position: relative;
+  transition: color .2s ease, background .2s ease, padding-left .2s ease;
+}
+.admin-nav-item:hover {
+  background: rgba(239, 231, 219, .04);
+  color: var(--cream);
+}

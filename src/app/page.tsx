@@ -1,13 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Ph } from '@/components/Ph';
 import { Reveal } from '@/components/Reveal';
 import { WordReveal } from '@/components/WordReveal';
 import { Countdown } from '@/components/Countdown';
 import { Ornament } from '@/components/Ornament';
 import { TornEdge } from '@/components/TornEdge';
+import { Btn } from '@/components/Btn';
+import { createClient } from '@/lib/supabase/client';
+
+type SiteConfig = {
+  coupleNames: string;
+  heroSubtitle: string;
+  weddingDate: string | null;
+  heroImageUrl: string | null;
+};
+
+const DEFAULTS: SiteConfig = {
+  coupleNames: 'Alicia & Fernando',
+  heroSubtitle: '— pelos olhares que não desviaram, até virarem destino.',
+  weddingDate: null,
+  heroImageUrl: null,
+};
 
 const QUICK_NAV: Array<{ href: string; t: string; s: string }> = [
   { href: '/rsvp', t: 'Confirme sua presença', s: 'busque seu nome na lista' },
@@ -20,13 +37,67 @@ const QUICK_NAV: Array<{ href: string; t: string; s: string }> = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
   const [scrollY, setScrollY] = useState(0);
+  const [config, setConfig] = useState<SiteConfig>(DEFAULTS);
 
   useEffect(() => {
     const on = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);
   }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    (async () => {
+      const [{ data: cfg }, { data: imgs }] = await Promise.all([
+        supabase.from('config').select('key, value'),
+        supabase
+          .from('images')
+          .select('storage_path')
+          .eq('context', 'hero')
+          .order('display_order')
+          .limit(1),
+      ]);
+      const map = new Map<string, string>();
+      (cfg ?? []).forEach((c: { key: string; value: string | null }) => map.set(c.key, c.value ?? ''));
+      const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+      const heroPath = imgs?.[0]?.storage_path;
+      setConfig({
+        coupleNames: map.get('couple_names') || DEFAULTS.coupleNames,
+        heroSubtitle: map.get('hero_subtitle') || DEFAULTS.heroSubtitle,
+        weddingDate: map.get('wedding_date') || null,
+        heroImageUrl: heroPath ? `${baseUrl}/storage/v1/object/public/photos/${heroPath}` : null,
+      });
+    })();
+  }, []);
+
+  const [name1, name2] = useMemo(() => {
+    const parts = config.coupleNames.split(/\s*&\s*/).filter(Boolean);
+    const a = (parts[0] ?? 'Alicia').toUpperCase();
+    const b = (parts[1] ?? 'Fernando').toUpperCase();
+    return [a, b] as const;
+  }, [config.coupleNames]);
+
+  const weddingTimestamp = useMemo(() => {
+    if (!config.weddingDate) return undefined;
+    const t = new Date(config.weddingDate).getTime();
+    return Number.isFinite(t) ? t : undefined;
+  }, [config.weddingDate]);
+
+  const weddingLine = useMemo(() => {
+    if (!config.weddingDate) return '28 · 11 · 2026 · SÁBADO';
+    try {
+      const d = new Date(config.weddingDate);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const weekday = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'][d.getDay()];
+      return `${dd} · ${mm} · ${yyyy} · ${weekday}`;
+    } catch {
+      return '28 · 11 · 2026 · SÁBADO';
+    }
+  }, [config.weddingDate]);
 
   return (
     <div data-scrollroot style={{ background: '#0E0B09', color: 'var(--cream)', position: 'relative' }}>
@@ -41,7 +112,24 @@ export default function HomePage() {
             transition: 'transform .05s linear',
           }}
         >
-          <Ph label="FOTO DO CASAL · ABRAÇO · 3:4" style={{ width: '100%', height: '100%' }} className="kb" />
+          {config.heroImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={config.heroImageUrl}
+              alt={config.coupleNames}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                width: '100%',
+                height: '100%',
+                background:
+                  'radial-gradient(ellipse at 50% 30%, #2a1f17 0%, #14100d 60%, #0E0B09 100%)',
+              }}
+            />
+          )}
         </div>
 
         {/* Vignette */}
@@ -54,36 +142,11 @@ export default function HomePage() {
           }}
         />
 
-        {/* Topbar */}
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            padding: '54px 20px 16px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div className="italic" style={{ fontSize: 18, color: 'var(--cream)' }}>
-            início
-          </div>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('openMenu'))}
-            aria-label="Abrir menu"
-            style={{ background: 'transparent', border: 0, color: 'var(--cream)', padding: 6, cursor: 'pointer' }}
-          >
-            <svg width="22" height="14" viewBox="0 0 22 14">
-              <path d="M0 1H22M0 7H14M0 13H22" stroke="currentColor" strokeWidth="1" />
-            </svg>
-          </button>
-        </div>
-
         {/* Names */}
         <div style={{ position: 'absolute', top: '24%', left: 0, right: 0, textAlign: 'center', zIndex: 2, padding: '0 18px' }}>
           <WordReveal
             as="div"
-            text="ALICIA"
+            text={name1}
             stagger={0}
             delay={100}
             className="serif"
@@ -94,7 +157,7 @@ export default function HomePage() {
           </div>
           <WordReveal
             as="div"
-            text="FERNANDO"
+            text={name2}
             stagger={0}
             delay={400}
             className="serif"
@@ -113,19 +176,18 @@ export default function HomePage() {
                 fontSize: 14,
                 color: 'rgba(239,231,219,.75)',
                 lineHeight: 1.5,
-                maxWidth: 260,
+                maxWidth: 280,
                 margin: '16px auto 0',
               }}
             >
-              — pelos olhares que não desviaram,
-              <br /> até virarem destino.
+              {config.heroSubtitle}
             </div>
           </div>
         </div>
 
         {/* Countdown */}
         <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, zIndex: 2, padding: '0 12px' }}>
-          <Countdown />
+          <Countdown target={weddingTimestamp} />
           <div
             className="micro pulse"
             style={{ textAlign: 'center', marginTop: 18, color: 'rgba(239,231,219,.6)', fontSize: 9, letterSpacing: '.3em' }}
@@ -139,61 +201,224 @@ export default function HomePage() {
       <TornEdge from="#0E0B09" to="var(--bone)" position="top" />
 
       {/* Save the date */}
-      <section style={{ background: 'var(--bone)', color: 'var(--ink)', padding: '44px 22px 60px', position: 'relative' }}>
-        <Reveal>
-          <div className="serif" style={{ fontSize: 72, lineHeight: 0.9, fontWeight: 300, letterSpacing: '.02em' }}>
-            SAVE
-            <br />
-            THE
-            <br />
-            <span className="italic" style={{ color: 'var(--ink)', fontStyle: 'italic' }}>
-              date!
-            </span>
-          </div>
-        </Reveal>
+      <section
+        data-theme="light"
+        className="std-section"
+        style={{
+          background: 'var(--bone)',
+          color: 'var(--ink)',
+          padding: '100px 28px 120px',
+          position: 'relative',
+        }}
+      >
+        <div className="std-grid">
+          {/* Coluna esquerda: título + CTA */}
+          <div className="std-col-left">
+            <Reveal>
+              <h2
+                className="serif std-title"
+                style={{ lineHeight: 0.85, fontWeight: 300, letterSpacing: '.01em', margin: 0 }}
+              >
+                SAVE
+                <br />
+                THE
+                <br />
+                <span className="italic" style={{ fontStyle: 'italic' }}>
+                  date!
+                </span>
+              </h2>
+            </Reveal>
 
-        <Reveal delay={200}>
-          <div
-            style={{ display: 'flex', gap: 10, marginTop: 28, overflowX: 'auto', paddingBottom: 12 }}
-            className="phone-scroll"
-          >
-            {[
-              { n: '01', l: 'PEDIDO · CAMPESTRE' },
-              { n: '02', l: 'ENSAIO · FAZENDA' },
-              { n: '03', l: 'NOIVADO' },
-            ].map((c) => (
-              <div key={c.n} style={{ flex: '0 0 120px', position: 'relative' }}>
-                <Ph
-                  light
-                  label={c.l}
-                  style={{
-                    width: 120,
-                    height: 160,
-                    borderRadius: '60px 60px 60px 60px / 80px 80px 80px 80px',
-                  }}
-                />
+            <Reveal delay={300}>
+              <div style={{ marginTop: 56, display: 'flex', gap: 18, alignItems: 'center' }}>
                 <div
-                  className="serif italic"
-                  style={{ position: 'absolute', right: -4, bottom: -8, fontSize: 28, color: 'var(--ink)', opacity: 0.85 }}
+                  aria-hidden
+                  style={{
+                    width: 52,
+                    height: 52,
+                    border: '1px solid var(--ink)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.75,
+                  }}
                 >
-                  {c.n}.
+                  <span className="italic" style={{ fontSize: 18, letterSpacing: '.05em' }}>
+                    A<span style={{ opacity: 0.5, margin: '0 2px' }}>&amp;</span>F
+                  </span>
                 </div>
+                <Btn variant="ghost" small onClick={() => router.push('/rsvp')}>
+                  Confirme sua presença
+                </Btn>
               </div>
+            </Reveal>
+          </div>
+
+          {/* Coluna direita: 3 fotos em arco */}
+          <div className="std-photos">
+            {[
+              { n: '01', l: 'O COMEÇO', date: '10 ABR 2018', ph: 'ABRAÇO · PEDIDO · CAMPESTRE' },
+              { n: '02', l: 'O PEDIDO', date: '18 NOV 2023', ph: 'ENSAIO · FAZENDA' },
+              { n: '03', l: 'O CASAMENTO', date: '28 NOV 2026', ph: 'NOIVADO' },
+            ].map((c, i) => (
+              <Reveal key={c.n} delay={200 + i * 120} className="std-photo-col">
+                <div style={{ position: 'relative' }}>
+                  <div
+                    className="std-arch"
+                    style={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRadius: '50% 50% 14px 14px / 32% 32% 8px 8px',
+                    }}
+                  >
+                    <Ph light label={c.ph} style={{ width: '100%', height: '100%' }} />
+                  </div>
+                  <div
+                    className="serif italic"
+                    style={{
+                      position: 'absolute',
+                      right: -6,
+                      bottom: -20,
+                      fontSize: 56,
+                      fontWeight: 300,
+                      color: 'var(--ink)',
+                      opacity: 0.88,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {c.n}.
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 40, padding: '0 6px' }}>
+                  <div
+                    className="hairline-dark"
+                    style={{ width: 1, height: 28, margin: '0 auto', background: 'rgba(14,11,9,.25)' }}
+                  />
+                  <div className="mono" style={{ fontSize: 9, color: 'var(--muted)', marginTop: 14 }}>
+                    {c.date}
+                  </div>
+                  <div
+                    className="serif"
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 400,
+                      letterSpacing: '.05em',
+                      marginTop: 6,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {c.l}
+                  </div>
+                </div>
+              </Reveal>
             ))}
           </div>
-        </Reveal>
+        </div>
 
-        <Reveal delay={400}>
-          <div style={{ marginTop: 36 }}>
+        <div className="std-swipe-hint" aria-hidden>
+          ← deslize →
+        </div>
+
+        {/* Linha inferior: data + frase */}
+        <Reveal delay={600}>
+          <div style={{ maxWidth: 1280, margin: '96px auto 0' }}>
             <div className="micro" style={{ color: 'var(--muted)' }}>
-              28 · 11 · 2026 · SÁBADO
+              {weddingLine}
             </div>
-            <div className="hairline-dark" style={{ margin: '12px 0' }} />
-            <div className="serif" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 400, maxWidth: 280 }}>
+            <div className="hairline-dark" style={{ margin: '14px 0' }} />
+            <div
+              className="serif"
+              style={{ fontSize: 24, lineHeight: 1.4, fontWeight: 400, maxWidth: 560 }}
+            >
               Será uma honra receber você para celebrar a união de duas vidas que viraram uma.
             </div>
           </div>
         </Reveal>
+
+        <style jsx>{`
+          .std-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 80px;
+            align-items: start;
+          }
+          .std-title {
+            font-size: clamp(64px, 10vw, 140px);
+          }
+          /* Mobile: slider horizontal com snap */
+          .std-photos {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 4px 28px 32px;
+            margin: 0 -28px;
+            scroll-padding: 0 28px;
+          }
+          .std-photos::-webkit-scrollbar {
+            display: none;
+          }
+          .std-photos > :global(.std-photo-col) {
+            flex: 0 0 78%;
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+            min-width: 0;
+          }
+          .std-arch {
+            aspect-ratio: 1 / 2.1;
+            width: 100%;
+          }
+          /* Hint sutil de "deslize" no mobile */
+          .std-swipe-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: -16px;
+            font-family: var(--font-inter), sans-serif;
+            font-size: 9px;
+            letter-spacing: .3em;
+            color: rgba(14, 11, 9, .35);
+            text-transform: uppercase;
+          }
+          @media (min-width: 720px) {
+            /* Desktop: volta pro grid de 3 colunas */
+            .std-photos {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 24px;
+              overflow: visible;
+              scroll-snap-type: none;
+              padding: 0;
+              margin: 0;
+            }
+            .std-photos > :global(.std-photo-col) {
+              flex: initial;
+              scroll-snap-align: none;
+            }
+            .std-swipe-hint {
+              display: none;
+            }
+          }
+          @media (min-width: 900px) {
+            .std-grid {
+              grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+              gap: 100px;
+            }
+            .std-col-left {
+              position: sticky;
+              top: 120px;
+            }
+            .std-photos {
+              gap: 28px;
+            }
+          }
+        `}</style>
       </section>
 
       {/* Quick nav */}

@@ -6,6 +6,7 @@ import { Ornament } from './Ornament';
 
 const items: Array<[string, string]> = [
   ['/', 'início'],
+  ['/confirmar', 'pré-confirmação'],
   ['/rsvp', 'confirme presença'],
   ['/presentes', 'presentes'],
   ['/cerimonia', 'cerimônia'],

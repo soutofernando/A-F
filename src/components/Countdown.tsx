@@ -44,8 +44,8 @@ function Tick({ value, label }: { value: number; label: string }) {
   );
 }
 
-export function Countdown({ compact = false }: { compact?: boolean }) {
-  const c = useCountdown();
+export function Countdown({ compact = false, target }: { compact?: boolean; target?: number }) {
+  const c = useCountdown(target ?? WEDDING_DATE);
   if (compact) {
     return (
       <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', justifyContent: 'center' }}>
