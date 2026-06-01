@@ -20,6 +20,22 @@
   will-change: transform;
 }
 
+/* ── Saída após 2s ───────────────────────────────────────────────────── */
+@keyframes stage-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -160%) scale(.55);
+  }
+}
+
+.celebration-stage.is-exiting {
+  animation: stage-out .65s cubic-bezier(.5, 0, .75, 0) forwards;
+}
+
 /* ── Medalhão / selo dourado ────────────────────────────────────────── */
 @keyframes seal-drop {
   0% {

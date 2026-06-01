@@ -58,7 +58,9 @@
       "Bash(rm -rf src/public)",
       "Bash(ffprobe -v error -show_entries stream=width,height,duration,codec_type -of default=noprint_wrappers=1 public/AeF.mp4)",
       "Bash(node -e \"const s=require\\('fs'\\).statSync\\('public/AeF.mp4'\\);console.log\\('size',\\(s.size/1024/1024\\).toFixed\\(2\\),'MB'\\)\")",
-      "PowerShell(git add -A)"
+      "PowerShell(git add -A)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git commit --amend -m 'feat: monograma centralizado + altura do vídeo' -m '- Medalhão A&F centralizado na tela \\(top 50%, position fixed\\) *)"
     ]
   }
 }

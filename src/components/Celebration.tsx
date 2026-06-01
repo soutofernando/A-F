@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 
 const GOLD = ['#D4AF7A', '#E8C58A', '#A88A5C', '#F5EDE0', '#EFE7DB'];
 
 export function Celebration() {
   const firedRef = useRef(false);
+  const [exiting, setExiting] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setExiting(true), 2000);
+    const t2 = setTimeout(() => setGone(true), 2650);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   useEffect(() => {
     if (firedRef.current) return;
@@ -100,9 +111,11 @@ export function Celebration() {
     };
   }, []);
 
+  if (gone) return null;
+
   return (
     <div className="celebration-overlay" aria-hidden="true">
-      <div className="celebration-stage">
+      <div className={`celebration-stage${exiting ? ' is-exiting' : ''}`}>
         <div className="celebration-halo" />
         <div className="celebration-medallion">
           <div className="celebration-medallion-spin">
@@ -156,38 +169,33 @@ function Seal() {
       <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(58, 42, 20, .35)" strokeWidth=".8" />
       <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(255, 248, 230, .25)" strokeWidth=".5" />
 
-      {/* Monograma A & F */}
-      <text
-        x="100"
-        y="108"
-        textAnchor="middle"
-        fontFamily="'Cormorant Garamond', Georgia, serif"
-        fontStyle="italic"
-        fontWeight="500"
-        fontSize="46"
-        fill="#3A2A14"
-      >
-        A
-        <tspan dx="2" fontStyle="italic" fontSize="34" dy="-2"> & </tspan>
-        <tspan dy="2" fontSize="46">F</tspan>
-      </text>
+      {/* Monograma — insígnia AeF */}
+      <image
+        href="/AeF.png"
+        x="34"
+        y="66"
+        width="132"
+        height="76"
+        preserveAspectRatio="xMidYMid meet"
+        opacity="0.95"
+      />
 
       {/* Estrelinhas decorativas */}
       <text x="100" y="42" textAnchor="middle" fontSize="11" fill="#3A2A14" opacity=".7">✦</text>
       <text x="100" y="170" textAnchor="middle" fontSize="11" fill="#3A2A14" opacity=".7">✦</text>
 
-      {/* Ano */}
+      {/* Data do casamento */}
       <text
         x="100"
-        y="148"
+        y="150"
         textAnchor="middle"
         fontFamily="'Inter', sans-serif"
-        fontSize="9"
-        letterSpacing="3"
+        fontSize="7.5"
+        letterSpacing="1.2"
         fill="#3A2A14"
-        opacity=".6"
+        opacity=".65"
       >
-        MMXXVI
+        28 DE NOVEMBRO DE 2026
       </text>
 
       {/* Reflexo / brilho 3D */}
