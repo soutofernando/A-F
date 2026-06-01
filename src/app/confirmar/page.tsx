@@ -16,12 +16,11 @@ import { WEDDING_DATE } from '@/components/Countdown';
 import { createClient } from '@/lib/supabase/client';
 import './confirmar.css';
 import '../rsvp/celebration.css';
+import { Logo } from '@/components/Logo';
 
-// Caminho do vídeo do casal. Coloque o arquivo em /public/video/nos.mp4
-// (e, opcionalmente, /public/video/poster.jpg). Sem o arquivo, mostramos um
-// placeholder elegante no lugar — nada quebra.
-const VIDEO_SRC = '/video/nos.mp4';
-const VIDEO_POSTER = '/video/poster.jpg';
+// Vídeo do monograma (retrato), servido de /public/AeF.mp4. Sem o arquivo,
+// mostramos um placeholder elegante no lugar — nada quebra.
+const VIDEO_SRC = '/AeF.mp4';
 
 type Kind = 'adult' | 'child';
 type Person = { id: number; name: string; kind: Kind };
@@ -98,12 +97,10 @@ export default function ConfirmarPage() {
             <Ornament color="var(--ink)" width={46} />
           </div>
         </Reveal>
-        <div className="cf-hero-kicker">alicia &amp; fernando · 28 · 11 · 2026</div>
-        <WordReveal as="h1" text="você vem?" stagger={120} className="cf-hero-title" />
+        <Logo style={{ margin: '0 auto 12px', display: 'block', height: 120 }} />
         <Reveal delay={400} y={40}>
           <p className="cf-hero-sub">
-            Reservamos um lugar — e um pedacinho do coração — para você e para quem você ama. Conta pra
-            gente quem virá celebrar esse dia ao nosso lado.
+           É com imensa alegria e gratidão a Deus que compartilhamos este momento tão especial de nossas vidas. Em novembro, diante de Deus e sob a proteção de Nossa Senhora, celebraremos nosso amor e teremos a honra de contar com sua presença nesse dia tão sonhado. Mal podemos esperar para viver esse momento único ao seu lado
           </p>
         </Reveal>
 
@@ -132,7 +129,7 @@ export default function ConfirmarPage() {
         <Reveal delay={240} y={48}>
           <p className="cf-body">
             Esse é só o começo da festa. Antes do grande dia, precisamos saber quem poderá estar
-            presente — assim preparamos cada detalhe, cada cadeira e cada brinde pensando em vocês.
+            presente, assim preparamos cada detalhe pensando em você.
           </p>
         </Reveal>
         <Reveal delay={360} y={40}>
@@ -391,7 +388,7 @@ function CountdownBlock() {
       <Reveal delay={240} y={30}>
         <div className="cf-count-date">
           <div className="cf-count-line" />
-          <span>28 de novembro de 2026 · sábado</span>
+          <span>28 de novembro de 2026 · sábado · 9h</span>
           <div className="cf-count-line" />
         </div>
       </Reveal>
@@ -403,7 +400,47 @@ function CountdownBlock() {
 function VideoBlock() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [hasVideo, setHasVideo] = useState(true);
+  const [muted, setMuted] = useState(true);
+
+  // Liga o som. Navegadores só permitem autoplay com áudio após um gesto do
+  // usuário, então começamos mudo e desmutamos no primeiro toque/clique/scroll.
+  const enableSound = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = false;
+    v.volume = 1;
+    setMuted(false);
+    void v.play().catch(() => {});
+  };
+
+  // React não aplica o atributo `muted` no DOM de forma confiável, e sem ele o
+  // autoplay é bloqueado (vídeo trava no 1º frame). Forçamos mudo via ref e
+  // disparamos o play no mount.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  }, []);
+
+  // Desmuta automaticamente na primeira interação da página.
+  useEffect(() => {
+    if (!muted) return;
+    const once = () => enableSound();
+    const opts = { once: true, passive: true } as const;
+    window.addEventListener('pointerdown', once, opts);
+    window.addEventListener('keydown', once, opts);
+    window.addEventListener('touchstart', once, opts);
+    window.addEventListener('scroll', once, opts);
+    return () => {
+      window.removeEventListener('pointerdown', once);
+      window.removeEventListener('keydown', once);
+      window.removeEventListener('touchstart', once);
+      window.removeEventListener('scroll', once);
+    };
+  }, [muted]);
 
   // Parallax suave conforme o scroll.
   useEffect(() => {
@@ -451,15 +488,30 @@ function VideoBlock() {
           onPointerLeave={reset}
         >
           {hasVideo ? (
-            <video
-              className="cf-video-media"
-              src={VIDEO_SRC}
-              poster={VIDEO_POSTER}
-              controls
-              playsInline
-              preload="metadata"
-              onError={() => setHasVideo(false)}
-            />
+            <>
+              <video
+                ref={videoRef}
+                className="cf-video-media"
+                src={VIDEO_SRC}
+                autoPlay
+                loop
+                muted
+                playsInline
+                controls
+                preload="auto"
+                onEnded={(e) => {
+                  const v = e.currentTarget;
+                  v.currentTime = 0;
+                  void v.play().catch(() => {});
+                }}
+                onError={() => setHasVideo(false)}
+              />
+              {muted && (
+                <button type="button" className="cf-video-sound" onClick={enableSound}>
+                  🔊 ativar som
+                </button>
+              )}
+            </>
           ) : (
             <div className="cf-video-placeholder">
               <div>
@@ -468,7 +520,7 @@ function VideoBlock() {
                   NOSSO VÍDEO ENTRA AQUI
                 </div>
                 <div style={{ fontSize: 11, marginTop: 8, opacity: 0.7 }}>
-                  /public/video/nos.mp4
+                  /public/AeF.mp4
                 </div>
               </div>
             </div>
@@ -476,7 +528,7 @@ function VideoBlock() {
         </div>
       </Reveal>
       <Reveal delay={160} y={30}>
-        <div className="cf-video-cap">um pedacinho da nossa história ✦ aperte o play</div>
+        <div className="cf-video-cap">um pedacinho da nossa história ✦ toque para ativar o som</div>
       </Reveal>
     </div>
   );

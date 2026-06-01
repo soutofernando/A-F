@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { Logo } from './Logo';
 
 const NAV: Array<[string, string]> = [
   ['/', 'início'],
@@ -83,22 +84,7 @@ export function StickyNav({ onMenu }: Props) {
       >
         {/* Monogram */}
         <Link href="/" aria-label="Alicia & Fernando" style={{ color: 'inherit', textDecoration: 'none', flexShrink: 0 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              border: `1px solid currentColor`,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0.85,
-            }}
-          >
-            <span className="italic" style={{ fontSize: 14, letterSpacing: '.05em' }}>
-              A<span style={{ opacity: 0.5, margin: '0 1px' }}>&amp;</span>F
-            </span>
-          </div>
+          <Logo height={36} priority style={{ opacity: 0.92 }} />
         </Link>
 
         {/* Desktop nav */}

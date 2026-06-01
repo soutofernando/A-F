@@ -44,7 +44,21 @@
       "Bash(echo \"exit=$?\")",
       "Bash(npm run *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(ls src/public)",
+      "Bash(ls public *)",
+      "Bash(ls src/app/*.png src/app/*.ico src/app/icon* src/app/favicon*)",
+      "Bash(file src/public/AeF.png)",
+      "Bash(node -e \"const b=require\\('fs'\\).readFileSync\\('src/public/AeF.png'\\);console.log\\('dim',b.readUInt32BE\\(16\\),'x',b.readUInt32BE\\(20\\)\\)\")",
+      "Bash(mkdir -p public)",
+      "Bash(cp src/public/AeF.png public/AeF.png)",
+      "Bash(cp src/public/AeF.png src/app/icon.png)",
+      "Bash(cp src/public/AeF.png src/app/apple-icon.png)",
+      "Bash(rm -rf src/public)",
+      "Bash(ffprobe -v error -show_entries stream=width,height,duration,codec_type -of default=noprint_wrappers=1 public/AeF.mp4)",
+      "Bash(node -e \"const s=require\\('fs'\\).statSync\\('public/AeF.mp4'\\);console.log\\('size',\\(s.size/1024/1024\\).toFixed\\(2\\),'MB'\\)\")",
+      "PowerShell(git add -A)"
     ]
   }
 }

@@ -10,6 +10,7 @@ import { Countdown } from '@/components/Countdown';
 import { Ornament } from '@/components/Ornament';
 import { TornEdge } from '@/components/TornEdge';
 import { Btn } from '@/components/Btn';
+import { Logo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/client';
 
 type SiteConfig = {
@@ -144,6 +145,9 @@ export default function HomePage() {
 
         {/* Names */}
         <div style={{ position: 'absolute', top: '24%', left: 0, right: 0, textAlign: 'center', zIndex: 2, padding: '0 18px' }}>
+          <div className="fade-up" style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+            <Logo height={64} priority style={{ opacity: 0.95 }} />
+          </div>
           <WordReveal
             as="div"
             text={name1}
@@ -231,23 +235,7 @@ export default function HomePage() {
 
             <Reveal delay={300}>
               <div style={{ marginTop: 56, display: 'flex', gap: 18, alignItems: 'center' }}>
-                <div
-                  aria-hidden
-                  style={{
-                    width: 52,
-                    height: 52,
-                    border: '1px solid var(--ink)',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: 0.75,
-                  }}
-                >
-                  <span className="italic" style={{ fontSize: 18, letterSpacing: '.05em' }}>
-                    A<span style={{ opacity: 0.5, margin: '0 2px' }}>&amp;</span>F
-                  </span>
-                </div>
+                <Logo height={52} style={{ opacity: 0.85 }} />
                 <Btn variant="ghost" small onClick={() => router.push('/rsvp')}>
                   Confirme sua presença
                 </Btn>
@@ -464,11 +452,11 @@ export default function HomePage() {
           </Reveal>
         ))}
 
-        <div style={{ textAlign: 'center', marginTop: 40, opacity: 0.4 }}>
-          <div className="italic" style={{ fontSize: 14 }}>
-            A &amp; F
+        <div style={{ textAlign: 'center', marginTop: 40, opacity: 0.55 }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Logo height={44} style={{ opacity: 0.75 }} />
           </div>
-          <div className="micro" style={{ fontSize: 8, marginTop: 6, color: 'rgba(239,231,219,.4)' }}>
+          <div className="micro" style={{ fontSize: 8, marginTop: 12, color: 'rgba(239,231,219,.4)' }}>
             ALICIA &amp; FERNANDO · MMXXVI
           </div>
         </div>

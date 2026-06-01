@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/Logo';
 
 const NAV: Array<[string, string]> = [
   ['/admin', 'Visão geral'],
@@ -42,10 +43,8 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
         }}
       >
         <Link href="/admin" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <div className="italic" style={{ fontSize: 14, color: 'var(--gold-soft)' }}>
-            a &amp; f
-          </div>
-          <div className="serif italic" style={{ fontSize: 26, marginTop: 2 }}>
+          <Logo height={40} />
+          <div className="serif italic" style={{ fontSize: 26, marginTop: 10 }}>
             admin
           </div>
         </Link>

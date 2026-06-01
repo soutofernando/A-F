@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Ornament } from './Ornament';
+import { Logo } from './Logo';
 
 const items: Array<[string, string]> = [
   ['/', 'início'],
@@ -57,8 +58,11 @@ export function MenuOverlay({ open, onClose }: Props) {
         </svg>
       </button>
 
-      <div className="italic" style={{ fontSize: 14, color: 'var(--gold-soft)', marginBottom: 30 }}>
-        alicia &amp; fernando
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, marginBottom: 30 }}>
+        <Logo height={48} />
+        <div className="italic" style={{ fontSize: 14, color: 'var(--gold-soft)' }}>
+          alicia &amp; fernando
+        </div>
       </div>
 
       <nav style={{ flex: 1 }}>

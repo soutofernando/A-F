@@ -92,7 +92,7 @@
 /* ── VÍDEO 3D ───────────────────────────────────────────────────────────── */
 .cf-video-wrap {
   perspective: 1600px;
-  max-width: 760px;
+  max-width: 440px;
   margin: 0 auto;
   padding: 10px 22px 0;
 }
@@ -124,18 +124,45 @@
 .cf-video-media {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  /* O arquivo é 9/16 com tarja preta em cima/baixo; a imagem real é a faixa
+     central. Forçamos o aspecto da faixa e usamos cover p/ cortar o preto. */
+  aspect-ratio: 23 / 10;
   object-fit: cover;
   background: #1a1511;
   border-radius: 2px;
   transform: translateZ(30px);
 }
+/* Botão de som sobre o vídeo (autoplay começa mudo) */
+.cf-video-sound {
+  position: absolute;
+  z-index: 3;
+  bottom: 22px;
+  right: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 999px;
+  background: rgba(14,11,9,.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #f4f0dc;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transform: translateZ(40px);
+  transition: opacity .4s, transform .4s;
+}
+.cf-video-sound:hover { background: rgba(14,11,9,.72); }
 .cf-video-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 9 / 16;
   border-radius: 2px;
   transform: translateZ(30px);
   background:
@@ -597,7 +624,8 @@
   .cf-video-wrap { padding: 6px 16px 0; }
   .cf-video-frame { padding: 9px; }
   .cf-video-frame::before { inset: 5px; }
-  .cf-video-media, .cf-video-placeholder { aspect-ratio: 4 / 5; }
+  .cf-video-media { aspect-ratio: 23 / 10; }
+  .cf-video-placeholder { aspect-ratio: 9 / 16; }
 
   .cf-count-section { padding: 56px 16px 6px; }
   .cf-count-grid { gap: 3px; margin-top: 18px; }

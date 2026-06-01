@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Btn } from '@/components/Btn';
 import { Ornament } from '@/components/Ornament';
+import { Logo } from '@/components/Logo';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -43,12 +44,12 @@ export default function AdminLoginPage() {
     >
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center' }}>
-          <div className="italic" style={{ fontSize: 16, color: 'var(--gold-soft)' }}>
-            a &amp; f
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Logo height={56} priority />
           </div>
           <div
             className="serif italic"
-            style={{ fontSize: 38, marginTop: 6, lineHeight: 1, letterSpacing: '.02em' }}
+            style={{ fontSize: 38, marginTop: 12, lineHeight: 1, letterSpacing: '.02em' }}
           >
             admin
           </div>

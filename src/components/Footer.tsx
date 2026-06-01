@@ -1,4 +1,5 @@
 import { Ornament } from './Ornament';
+import { Logo } from './Logo';
 
 export function Footer() {
   return (
@@ -12,10 +13,10 @@ export function Footer() {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Ornament color="rgba(239,231,219,.35)" width={40} />
+        <Logo height={52} style={{ opacity: 0.9 }} />
       </div>
-      <div className="italic" style={{ fontSize: 14, marginTop: 16, color: 'var(--gold-soft)', opacity: 0.7 }}>
-        A &amp; F · MMXXVI
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+        <Ornament color="rgba(239,231,219,.35)" width={40} />
       </div>
       <div className="mono" style={{ fontSize: 9, marginTop: 20, letterSpacing: '.25em' }}>
         DESENVOLVIDO POR{' '}
