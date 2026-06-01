@@ -527,9 +527,6 @@ function VideoBlock() {
           )}
         </div>
       </Reveal>
-      <Reveal delay={160} y={30}>
-        <div className="cf-video-cap">um pedacinho da nossa história ✦ toque para ativar o som</div>
-      </Reveal>
     </div>
   );
 }

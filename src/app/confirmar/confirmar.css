@@ -127,6 +127,7 @@
   /* O arquivo é 9/16 com tarja preta em cima/baixo; a imagem real é a faixa
      central. Forçamos o aspecto da faixa e usamos cover p/ cortar o preto. */
   aspect-ratio: 23 / 10;
+  height: 180px; /* +20px sobre a altura base (~160px) */
   object-fit: cover;
   background: #1a1511;
   border-radius: 2px;
