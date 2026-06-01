@@ -122,7 +122,7 @@ export function Celebration() {
             <Seal />
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div className="celebration-stamp-wrap">
           <div className="celebration-stamp">confirmado</div>
         </div>
       </div>

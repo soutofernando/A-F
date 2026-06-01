@@ -118,6 +118,15 @@
   100% { transform: scale(1) rotate(-12deg); }
 }
 
+.celebration-stamp-wrap {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+}
+
 .celebration-stamp {
   margin-top: 36px;
   font-family: var(--font-serif), 'Cormorant Garamond', serif;
