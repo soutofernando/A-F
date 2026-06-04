@@ -18,6 +18,8 @@ type Props = { onMenu: () => void };
 
 export function StickyNav({ onMenu }: Props) {
   const pathname = usePathname();
+  // TEMP: em /confirmar mostra só o monograma, sem menu (remover esta linha no futuro)
+  const menuless = pathname === '/confirmar';
   const [onLight, setOnLight] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -88,6 +90,7 @@ export function StickyNav({ onMenu }: Props) {
         </Link>
 
         {/* Desktop nav */}
+        {!menuless && (
         <nav className="nav-desktop" style={{ display: 'none', gap: 36, alignItems: 'center' }}>
           {NAV.map(([href, label]) => {
             const active = pathname === href;
@@ -113,8 +116,10 @@ export function StickyNav({ onMenu }: Props) {
             );
           })}
         </nav>
+        )}
 
         {/* Hamburger (mobile + sempre disponível pra ver todas as 8 seções) */}
+        {!menuless && (
         <button
           onClick={onMenu}
           aria-label="Abrir menu"
@@ -131,6 +136,7 @@ export function StickyNav({ onMenu }: Props) {
             <path d="M0 1H22M0 7H14M0 13H22" stroke="currentColor" strokeWidth="1" />
           </svg>
         </button>
+        )}
       </div>
 
       <style jsx>{`

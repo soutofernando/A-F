@@ -128,8 +128,7 @@ export default function ConfirmarPage() {
         </Reveal>
         <Reveal delay={240} y={48}>
           <p className="cf-body">
-            Esse é só o começo da festa. Antes do grande dia, precisamos saber quem poderá estar
-            presente, assim preparamos cada detalhe pensando em você.
+           Esse é só o começo da festa. Antes do grande dia, precisamos saber quem poderá estar presente, para prepararmos cada detalhe com muito zelo e carinho.
           </p>
         </Reveal>
         <Reveal delay={360} y={40}>
