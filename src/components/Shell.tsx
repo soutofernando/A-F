@@ -21,11 +21,17 @@ export function Shell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  const hideFooter =
+    pathname === '/despensa' ||
+    pathname?.startsWith('/despensa/') ||
+    pathname === '/despesas' ||
+    pathname?.startsWith('/despesas/');
+
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: '#0E0B09' }}>
       <StickyNav onMenu={() => setMenuOpen(true)} />
       {children}
-      <Footer />
+      {!hideFooter && <Footer />}
       <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );

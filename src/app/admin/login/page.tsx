@@ -1,10 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Btn } from '@/components/Btn';
 import { Ornament } from '@/components/Ornament';
 import { Logo } from '@/components/Logo';
+
+function authErrorMessage(
+  error: string | null,
+  errorCode: string | null,
+  description: string | null,
+): string | null {
+  if (errorCode === 'otp_expired') {
+    return 'Link expirado ou já usado. Solicite um novo abaixo.';
+  }
+  if (description) return description;
+  if (error === 'missing_code') return 'Link inválido. Solicite um novo abaixo.';
+  if (error) return error;
+  return null;
+}
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -12,12 +26,23 @@ export default function AdminLoginPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const msg = authErrorMessage(
+      params.get('error'),
+      params.get('error_code'),
+      params.get('error_description'),
+    );
+    if (msg) setError(msg);
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback?next=/admin`;
+    // Sem query string — Supabase exige match exato na allowlist (use .../auth/callback** no dashboard).
+    const redirectTo = `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { emailRedirectTo: redirectTo },

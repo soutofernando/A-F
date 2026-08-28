@@ -1,0 +1,189 @@
+.sh-root {
+  min-height: 100vh;
+  background: var(--cream);
+  color: var(--ink);
+  padding: 72px 12px 16px;
+}
+
+.sh-toolbar {
+  max-width: 1040px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sh-toolbar h1 {
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.sh-toolbar span {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+.sh-error {
+  max-width: 1040px;
+  margin: 0 auto 8px;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 12px;
+  color: #7a2e2e;
+  background: rgba(160, 50, 40, .08);
+  border: 1px solid rgba(160, 50, 40, .25);
+  padding: 6px 10px;
+}
+
+.sh-sheet {
+  max-width: 1040px;
+  margin: 0 auto;
+  border: 1px solid #c8c2a8;
+  background: #fffdf6;
+  overflow: auto;
+  max-height: calc(100vh - 110px);
+}
+
+.sh-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.sh-sheet th,
+.sh-sheet td {
+  border: 1px solid #d4ceb6;
+  padding: 5px 8px;
+  vertical-align: middle;
+}
+
+.sh-sheet thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #ece6cc;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: #4a4638;
+  text-align: left;
+}
+
+.col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  width: 88px;
+  white-space: nowrap;
+}
+
+.col-item small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.sh-sheet tbody tr.sh-cat td {
+  background: #dcd4b8;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #3a362c;
+  padding: 6px 8px;
+}
+
+.col-add {
+  width: 148px;
+}
+
+.sh-sheet tbody tr:nth-child(even) td {
+  background: #f6f1dc;
+}
+
+.sh-sheet tbody tr:nth-child(odd) td {
+  background: #fffdf6;
+}
+
+.sh-sheet tbody tr.is-done td {
+  color: var(--muted);
+}
+
+.sh-sheet tbody tr.is-flash td {
+  background: #e4efd4;
+}
+
+.col-num.is-ok {
+  font-weight: 600;
+  color: #2f5a2f;
+}
+
+.sh-ok {
+  display: block;
+  text-align: center;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #2f5a2f;
+}
+
+.col-add form {
+  display: grid;
+  grid-template-columns: 1fr 32px;
+  gap: 4px;
+}
+
+.col-add input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid #b7b093;
+  background: #fff;
+  padding: 0 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  text-align: right;
+  color: var(--ink);
+  outline: none;
+}
+
+.col-add input:focus {
+  border-color: var(--ink);
+}
+
+.col-add button {
+  height: 28px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.col-add button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .sh-root { padding: 68px 0 8px; }
+  .sh-toolbar { padding: 0 8px; }
+  .sh-error { margin-left: 8px; margin-right: 8px; }
+  .col-num { width: 64px; }
+  .col-add { width: 118px; }
+  .sh-sheet th,
+  .sh-sheet td { padding: 4px 6px; }
+}

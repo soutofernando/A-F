@@ -19,7 +19,12 @@ type Props = { onMenu: () => void };
 export function StickyNav({ onMenu }: Props) {
   const pathname = usePathname();
   // TEMP: em /confirmar mostra só o monograma, sem menu (remover esta linha no futuro)
-  const menuless = pathname === '/confirmar';
+  const menuless =
+    pathname === '/confirmar' ||
+    pathname === '/despensa' ||
+    pathname?.startsWith('/despensa/') ||
+    pathname === '/despesas' ||
+    pathname?.startsWith('/despesas/');
   const [onLight, setOnLight] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
