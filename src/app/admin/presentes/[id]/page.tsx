@@ -6,39 +6,44 @@ import {
   Card,
   Checkbox,
   Field,
+  FileField,
   PageHeader,
   SelectField,
   SubmitButton,
   TextField,
 } from '@/components/admin/ui';
+import { resolveGiftImageIdFromForm } from '@/lib/admin/upload-presentes-image';
+import { GIFT_CATEGORY_IDS } from '@/lib/gift-categories';
 
 export const dynamic = 'force-dynamic';
-
-const GIFT_CATEGORIES = ['Casa', 'Cozinha', 'Lua de mel', 'Pix'] as const;
 
 async function updateGift(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
 
+  const title = String(formData.get('title') ?? '').trim();
   const priceReais = String(formData.get('price') ?? '').replace(',', '.').trim();
   const priceCents = priceReais ? Math.round(parseFloat(priceReais) * 100) : null;
+  const image_id = await resolveGiftImageIdFromForm(formData, title);
 
   const supabase = await createClient();
   await supabase
     .from('gifts')
     .update({
-      title: String(formData.get('title') ?? '').trim(),
+      title,
       category: String(formData.get('category') ?? '').trim(),
       description: String(formData.get('description') ?? '').trim() || null,
       price_cents: Number.isFinite(priceCents) ? priceCents : null,
-      image_id: String(formData.get('image_id') ?? '') || null,
+      image_id,
       pix_enabled: formData.get('pix_enabled') === 'on',
       card_enabled: formData.get('card_enabled') === 'on',
       display_order: Number(formData.get('display_order') ?? 0) || 0,
     })
     .eq('id', id);
   revalidatePath('/admin/presentes');
+  revalidatePath('/presentes');
+  revalidatePath('/admin/imagens');
   redirect('/admin/presentes');
 }
 
@@ -52,18 +57,24 @@ export default async function EditGiftPage({ params }: { params: Promise<{ id: s
   if (!gift) notFound();
 
   const imgList = (images ?? []) as Array<{ id: string; alt: string | null; storage_path: string; context: string }>;
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const currentImage = gift.image_id ? imgList.find((img) => img.id === gift.image_id) : null;
+  const currentImageUrl = currentImage
+    ? `${baseUrl}/storage/v1/object/public/photos/${currentImage.storage_path}`
+    : null;
   const priceReais = gift.price_cents != null ? (gift.price_cents / 100).toFixed(2) : '';
 
-  const categoryOptions: Array<string> = [...GIFT_CATEGORIES];
+  const categoryOptions: Array<string> = [...GIFT_CATEGORY_IDS];
   if (gift.category && !categoryOptions.includes(gift.category)) {
     categoryOptions.push(`${gift.category}`);
   }
 
+  const presentesImages = imgList.filter((img) => img.context === 'presentes');
   const imageOptions = [
     { value: '', label: '— sem imagem —' },
-    ...imgList.map((img) => ({
+    ...presentesImages.map((img) => ({
       value: img.id,
-      label: `[${img.context}] ${img.alt ?? img.storage_path}`,
+      label: img.alt ?? img.storage_path,
     })),
   ];
 
@@ -72,7 +83,7 @@ export default async function EditGiftPage({ params }: { params: Promise<{ id: s
       <PageHeader kicker="EDITAR PRESENTE" title={gift.title} />
 
       <Card>
-        <form action={updateGift} style={{ display: 'grid', gap: 16 }}>
+        <form action={updateGift} encType="multipart/form-data" style={{ display: 'grid', gap: 16 }}>
           <input type="hidden" name="id" value={gift.id} />
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <Field label="Título" name="title" defaultValue={gift.title} required />
@@ -92,11 +103,33 @@ export default async function EditGiftPage({ params }: { params: Promise<{ id: s
             />
           </div>
 
+          {currentImageUrl ? (
+            <div>
+              <span style={{ display: 'block', fontSize: 10, letterSpacing: '.22em', textTransform: 'uppercase', color: 'rgba(239,231,219,.55)', marginBottom: 7 }}>
+                Foto atual
+              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentImageUrl}
+                alt={currentImage?.alt ?? gift.title}
+                style={{ width: 120, height: 120, objectFit: 'cover', border: '1px solid rgba(239,231,219,.12)' }}
+              />
+            </div>
+          ) : null}
+
+          <FileField
+            label="Nova foto do presente"
+            name="file"
+            hint="Envie para substituir a foto atual. JPG, PNG ou WebP."
+          />
+          <Field label="Texto da foto (opcional)" name="image_alt" placeholder="Se vazio, usa o título" />
+
           <SelectField
-            label="Imagem (opcional)"
+            label="Ou escolher da galeria"
             name="image_id"
             options={imageOptions}
             defaultValue={gift.image_id ?? ''}
+            hint="Usado se nenhum arquivo novo for enviado."
           />
 
           <TextField label="Descrição" name="description" defaultValue={gift.description} rows={3} />

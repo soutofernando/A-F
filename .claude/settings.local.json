@@ -62,7 +62,8 @@
       "Bash(git commit -m '@ *)",
       "Bash(git commit --amend -m 'feat: monograma centralizado + altura do vídeo' -m '- Medalhão A&F centralizado na tela \\(top 50%, position fixed\\) *)",
       "Bash(git commit -m 'feat: insígnia AeF na celebração + saída em 2s + data do casamento *)",
-      "Bash(git commit -m 'fix: centraliza medalhão da celebração na tela *)"
+      "Bash(git commit -m 'fix: centraliza medalhão da celebração na tela *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -6,61 +6,60 @@ import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 
 const NAV: Array<[string, string]> = [
-  ['/', 'início'],
-  ['/rsvp', 'confirme presença'],
+  ['/#historia', 'história'],
+  ['/#dia', 'o grande dia'],
+  ['/#confirmar', 'presença'],
   ['/presentes', 'presentes'],
-  ['/cerimonia', 'cerimônia'],
-  ['/album', 'álbum de fotos'],
-  ['/historia', 'nossa história'],
+  ['/#album', 'álbum'],
+  ['/#recados', 'recados'],
 ];
 
 type Props = { onMenu: () => void };
 
 export function StickyNav({ onMenu }: Props) {
   const pathname = usePathname();
-  // TEMP: em /confirmar mostra só o monograma, sem menu (remover esta linha no futuro)
   const menuless =
-    pathname === '/confirmar' ||
     pathname === '/despensa' ||
     pathname?.startsWith('/despensa/') ||
     pathname === '/despesas' ||
     pathname?.startsWith('/despesas/');
-  const [onLight, setOnLight] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState('');
+  const [solid, setSolid] = useState(pathname !== '/');
+  const onHome = pathname === '/';
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
+    if (!onHome) {
+      setSolid(true);
+      return;
+    }
+    const onScroll = () => setSolid(window.scrollY > 28);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [onHome]);
 
   useEffect(() => {
-    const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-theme="light"]'));
-    if (!targets.length) {
-      setOnLight(false);
+    if (!onHome) {
+      setActive('');
       return;
     }
-    // Linha de detecção: 40px abaixo do topo (meio da navbar)
+
+    const nodes = NAV.map(([href]) => document.getElementById(href.replace('/#', ''))).filter(
+      (node): node is HTMLElement => Boolean(node),
+    );
+    if (!nodes.length) return;
     const io = new IntersectionObserver(
       (entries) => {
-        // Se qualquer seção clara estiver cruzando a linha da navbar, vira light.
-        const anyLight = entries.some((e) => e.isIntersecting);
-        setOnLight(anyLight);
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target.id) setActive(visible.target.id);
       },
-      { rootMargin: '-40px 0px -100% 0px', threshold: 0 },
+      { rootMargin: '-30% 0px -55% 0px', threshold: [0.15, 0.4] },
     );
-    targets.forEach((t) => io.observe(t));
+    nodes.forEach((node) => io.observe(node));
     return () => io.disconnect();
-  }, [pathname]);
-
-  const textColor = onLight ? 'var(--ink)' : 'var(--cream)';
-  const bg = scrolled
-    ? onLight
-      ? 'rgba(237,232,208,.82)'
-      : 'rgba(14,11,9,.55)'
-    : 'transparent';
-  const border = onLight ? 'rgba(14,11,9,.1)' : 'rgba(239,231,219,.08)';
+  }, [onHome]);
 
   return (
     <header
@@ -69,85 +68,83 @@ export function StickyNav({ onMenu }: Props) {
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 40,
-        color: textColor,
-        background: bg,
-        backdropFilter: scrolled ? 'blur(10px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(10px)' : 'none',
-        borderBottom: scrolled ? `1px solid ${border}` : '1px solid transparent',
-        transition:
-          'color .4s ease, background .4s ease, border-color .4s ease, backdrop-filter .4s ease',
+        zIndex: 80,
+        color: 'var(--ink-blue)',
+        background: solid ? 'rgba(248, 245, 238, 0.88)' : 'transparent',
+        backdropFilter: solid ? 'blur(16px)' : 'none',
+        WebkitBackdropFilter: solid ? 'blur(16px)' : 'none',
+        borderBottom: solid ? '1px solid rgba(213, 220, 230, .85)' : '1px solid transparent',
+        transition: 'background .35s ease, border-color .35s ease',
+        textShadow: solid ? 'none' : '0 1px 0 rgba(248, 245, 238, .92)',
       }}
     >
       <div
+        className="nav-row"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '18px 28px',
-          maxWidth: 1400,
+          gap: 16,
+          padding: '14px 22px',
+          maxWidth: 1280,
           margin: '0 auto',
         }}
       >
-        {/* Monogram */}
         <Link href="/" aria-label="Alicia & Fernando" style={{ color: 'inherit', textDecoration: 'none', flexShrink: 0 }}>
-          <Logo height={36} priority style={{ opacity: 0.92 }} />
+          <Logo height={34} priority />
         </Link>
 
-        {/* Desktop nav */}
         {!menuless && (
-        <nav className="nav-desktop" style={{ display: 'none', gap: 36, alignItems: 'center' }}>
-          {NAV.map(([href, label]) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={active ? 'italic' : 'micro'}
-                style={{
-                  color: 'inherit',
-                  textDecoration: 'none',
-                  fontSize: active ? 18 : 10,
-                  letterSpacing: active ? '.02em' : '.24em',
-                  fontStyle: active ? 'italic' : 'normal',
-                  textTransform: active ? 'none' : 'uppercase',
-                  whiteSpace: 'nowrap',
-                  transition: 'opacity .3s',
-                  opacity: active ? 1 : 0.85,
-                }}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+          <nav className="nav-desktop" style={{ display: 'none', gap: 28, alignItems: 'center' }}>
+            {NAV.map(([href, label]) => {
+              const id = href.startsWith('/#') ? href.slice(2) : '';
+              const on = id ? onHome && active === id : pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="micro"
+                  style={{
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    fontSize: 12,
+                    paddingBottom: 4,
+                    borderBottom: on ? '1px solid var(--dourado)' : '1px solid transparent',
+                  }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
         )}
 
-        {/* Hamburger (mobile + sempre disponível pra ver todas as 8 seções) */}
         {!menuless && (
-        <button
-          onClick={onMenu}
-          aria-label="Abrir menu"
-          style={{
-            background: 'transparent',
-            border: 0,
-            padding: 8,
-            cursor: 'pointer',
-            color: 'inherit',
-            flexShrink: 0,
-          }}
-        >
-          <svg width="22" height="14" viewBox="0 0 22 14">
-            <path d="M0 1H22M0 7H14M0 13H22" stroke="currentColor" strokeWidth="1" />
-          </svg>
-        </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/#confirmar" className="btn btn-primary btn-sm nav-cta">
+              Confirmar presença
+            </Link>
+            <button
+              onClick={onMenu}
+              aria-label="Abrir menu"
+              className="nav-burger"
+              style={{ background: 'transparent', border: 0, padding: 8, cursor: 'pointer', color: 'inherit' }}
+            >
+              <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden>
+                <path d="M0 1H22M0 7H14M0 13H22" stroke="currentColor" strokeWidth="1" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
 
       <style jsx>{`
-        @media (min-width: 900px) {
+        @media (min-width: 980px) {
           .nav-desktop {
             display: flex !important;
+          }
+          .nav-burger {
+            display: none;
           }
         }
       `}</style>

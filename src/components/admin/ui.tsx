@@ -78,6 +78,39 @@ export function Field({
   );
 }
 
+export function FileField({
+  label,
+  name,
+  accept = 'image/*',
+  required,
+  hint,
+}: {
+  label: string;
+  name: string;
+  accept?: string;
+  required?: boolean;
+  hint?: string;
+}) {
+  return (
+    <label style={{ display: 'block' }}>
+      <span style={adminLabelStyle}>{label}</span>
+      <input
+        name={name}
+        type="file"
+        accept={accept}
+        required={required}
+        className="admin-input"
+        style={{ ...adminInputStyle, padding: '10px 12px' }}
+      />
+      {hint && (
+        <div style={{ fontSize: 11, color: 'rgba(239,231,219,.4)', marginTop: 5, fontStyle: 'italic' }}>
+          {hint}
+        </div>
+      )}
+    </label>
+  );
+}
+
 export function TextField({
   label,
   name,

@@ -26,18 +26,37 @@ export function useCountdown(target = WEDDING_DATE) {
   return { months, days, hours, mins, secs, totalDays };
 }
 
-function Tick({ value, label }: { value: number; label: string }) {
+function Digit({ n }: { n: string }) {
+  const value = Number(n);
+  return (
+    <span className="roll-window" aria-hidden>
+      <span className="roll-strip" style={{ transform: `translateY(-${value}em)` }}>
+        {Array.from({ length: 10 }, (_, i) => (
+          <span key={i}>{i}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+const LABEL_COLORS = [
+  'var(--ink-blue)',
+  'var(--btn-secondary)',
+  'var(--azul-hero)',
+  'var(--texto-suave)',
+  'var(--texto-discreto)',
+] as const;
+
+function Tick({ value, label, labelIndex }: { value: number; label: string; labelIndex: number }) {
   const str = String(value).padStart(2, '0');
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0 }}>
-      <div
-        key={value}
-        className="tick-in serif"
-        style={{ fontSize: 42, lineHeight: 1, color: 'var(--cream)', fontWeight: 300, letterSpacing: '.01em' }}
-      >
-        {str}
+      <div className="serif" style={{ fontSize: 'clamp(32px, 8vw, 48px)', lineHeight: 1, color: 'var(--ink-blue)', fontWeight: 400 }}>
+        <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{str}</span>
+        <Digit n={str[0]} />
+        <Digit n={str[1]} />
       </div>
-      <div className="micro" style={{ marginTop: 8, color: 'rgba(239,231,219,.55)', fontSize: 8 }}>
+      <div className="micro" style={{ marginTop: 8, color: LABEL_COLORS[labelIndex % LABEL_COLORS.length] }}>
         {label}
       </div>
     </div>
@@ -46,22 +65,23 @@ function Tick({ value, label }: { value: number; label: string }) {
 
 export function Countdown({ compact = false, target }: { compact?: boolean; target?: number }) {
   const c = useCountdown(target ?? WEDDING_DATE);
+  const items: Array<[string, number]> = [
+    ['mês', c.months],
+    ['dias', c.days],
+    ['horas', c.hours],
+    ['min', c.mins],
+    ['seg', c.secs],
+  ];
   if (compact) {
     return (
-      <div style={{ display: 'flex', gap: 14, alignItems: 'baseline', justifyContent: 'center' }}>
-        {[
-          ['MÊS', c.months],
-          ['DIAS', c.days],
-          ['HRS', c.hours],
-          ['MIN', c.mins],
-          ['SEG', c.secs],
-        ].map(([l, v]) => (
-          <div key={String(l)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div className="serif" style={{ fontSize: 22, lineHeight: 1, color: 'var(--cream)' }}>
-              {String(v).padStart(2, '0')}
+      <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+        {items.map(([label, value]) => (
+          <div key={label} style={{ textAlign: 'center' }}>
+            <div className="serif" style={{ fontSize: 28, lineHeight: 1, color: 'var(--azul-profundo)' }}>
+              {String(value).padStart(2, '0')}
             </div>
-            <div className="micro" style={{ fontSize: 7, color: 'rgba(239,231,219,.5)', marginTop: 3 }}>
-              {l}
+            <div className="micro" style={{ color: 'var(--texto-suave)', marginTop: 4 }}>
+              {label}
             </div>
           </div>
         ))}
@@ -69,12 +89,10 @@ export function Countdown({ compact = false, target }: { compact?: boolean; targ
     );
   }
   return (
-    <div style={{ display: 'flex', gap: 8, padding: '0 16px', alignItems: 'baseline' }}>
-      <Tick value={c.months} label="MÊS" />
-      <Tick value={c.days} label="DIAS" />
-      <Tick value={c.hours} label="HORAS" />
-      <Tick value={c.mins} label="MIN" />
-      <Tick value={c.secs} label="SEG" />
+    <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', width: '100%', maxWidth: 520, margin: '0 auto' }}>
+      {items.map(([label, value], index) => (
+        <Tick key={label} value={value} label={label} labelIndex={index} />
+      ))}
     </div>
   );
 }

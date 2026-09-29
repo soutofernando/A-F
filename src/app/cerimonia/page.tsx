@@ -4,6 +4,8 @@ import { WordReveal } from '@/components/WordReveal';
 import { Ph } from '@/components/Ph';
 import { Btn } from '@/components/Btn';
 import { TornEdge } from '@/components/TornEdge';
+import { ChurchScene } from '@/components/church/ChurchScene';
+import { FieldBackdrop } from '@/components/FieldBackdrop';
 
 const SCHEDULE: Array<[string, string]> = [
   ['09:00', 'CERIMÔNIA · IGREJA'],
@@ -20,8 +22,10 @@ export default function CerimoniaPage() {
       {/* Parte clara: cerimônia */}
       <section
         data-theme="light"
+        className="has-field"
         style={{ background: 'var(--bone)', color: 'var(--ink)' }}
       >
+        <FieldBackdrop tone="sky" />
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '120px 22px 8px' }}>
           <div className="micro" style={{ color: 'var(--muted)' }}>
             CAPÍTULO III
@@ -36,7 +40,17 @@ export default function CerimoniaPage() {
         </div>
 
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 22px 40px' }}>
-          <Ph light label="IGREJA · FACHADA · 4:3" aspect="4/3" />
+          <div
+            style={{
+              position: 'relative',
+              aspectRatio: '4 / 3',
+              overflow: 'hidden',
+              background: 'var(--ceu-claro)',
+              borderRadius: 4,
+            }}
+          >
+            <ChurchScene />
+          </div>
           <div style={{ marginTop: 20 }}>
             <div className="micro" style={{ color: 'var(--muted)' }}>
               CERIMÔNIA · 09:00
@@ -63,10 +77,11 @@ export default function CerimoniaPage() {
         </div>
       </section>
 
-      <TornEdge from="var(--bone)" to="#0E0B09" position="bottom" />
+      <TornEdge from="var(--bg-alt)" to="var(--bg)" position="bottom" />
 
       {/* Parte escura: recepção */}
-      <section style={{ background: 'var(--ink)', color: 'var(--cream)' }}>
+      <section className="has-field" style={{ background: 'var(--bg)', color: 'var(--texto)' }}>
+        <FieldBackdrop tone="leaf" />
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '30px 22px 60px' }}>
           <Ph label="SÍTIO · ÁRVORES · NOITE" aspect="4/3" />
           <div style={{ marginTop: 20 }}>
@@ -81,7 +96,7 @@ export default function CerimoniaPage() {
               <br />
               da Mata
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(239,231,219,.65)', marginTop: 10, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: 'var(--texto-suave)', marginTop: 10, lineHeight: 1.6 }}>
               almoço, festa e dança até cair a noite.
               <br />
               transfer saindo da igreja às 10h30.
@@ -91,8 +106,8 @@ export default function CerimoniaPage() {
               style={{
                 marginTop: 20,
                 padding: '16px 0',
-                borderTop: '1px solid rgba(239,231,219,.12)',
-                borderBottom: '1px solid rgba(239,231,219,.12)',
+                borderTop: '1px solid var(--linha)',
+                borderBottom: '1px solid var(--linha)',
               }}
             >
               {SCHEDULE.map(([h, t]) => (
@@ -100,7 +115,7 @@ export default function CerimoniaPage() {
                   <div className="serif" style={{ fontSize: 20, color: 'var(--gold-soft)', minWidth: 60 }}>
                     {h}
                   </div>
-                  <div className="micro" style={{ fontSize: 10, color: 'rgba(239,231,219,.8)' }}>
+                  <div className="micro" style={{ color: 'var(--texto)' }}>
                     {t}
                   </div>
                 </div>

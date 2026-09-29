@@ -1,22 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-// ---- TEMP: libera apenas /confirmar, lista de compras e /admin (remover este bloco no futuro) ----
-const ONLY_PATH = '/confirmar';
-const OPEN_PREFIXES = ['/despensa', '/despesas'];
-function tempRedirect(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (pathname === ONLY_PATH) return null;
-  if (OPEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
-  if (pathname === '/auth/callback' || pathname.startsWith('/auth/')) return null;
-  if (pathname.startsWith('/api/')) return null;
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) return null;
-  const url = request.nextUrl.clone();
-  url.pathname = ONLY_PATH;
-  return NextResponse.redirect(url);
-}
-// ---- /TEMP ----
-
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
@@ -42,8 +26,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const redirect = tempRedirect(request); // TEMP: remover
-  if (redirect) return redirect; // TEMP: remover
   return updateSession(request);
 }
 

@@ -3,18 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Ornament } from './Ornament';
-import { Logo } from './Logo';
 
 const items: Array<[string, string]> = [
   ['/', 'início'],
-  ['/confirmar', 'pré-confirmação'],
-  ['/rsvp', 'confirme presença'],
+  ['/#confirmar', 'confirme presença'],
   ['/presentes', 'presentes'],
   ['/cerimonia', 'cerimônia'],
   ['/dress-code', 'código de vestimenta'],
-  ['/album', 'álbum de fotos'],
-  ['/historia', 'nossa história'],
-  ['/mensagens', 'recados'],
+  ['/#historia', 'nossa história'],
 ];
 
 type Props = { open: boolean; onClose: () => void };
@@ -24,96 +20,69 @@ export function MenuOverlay({ open, onClose }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-hidden={!open}
+      {...(!open ? { inert: true } : {})}
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 50,
-        background: 'rgba(14,11,9,.96)',
-        backdropFilter: 'blur(10px)',
-        transition: 'opacity .5s, transform .5s',
+        zIndex: 90,
+        background: 'rgba(248, 245, 238, .96)',
+        backdropFilter: 'blur(16px)',
+        transition: 'opacity .35s ease',
         opacity: open ? 1 : 0,
         pointerEvents: open ? 'auto' : 'none',
-        transform: open ? 'translateY(0)' : 'translateY(-20px)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '60px 28px 40px',
-        color: 'var(--cream)',
+        padding: '28px 28px 36px',
+        color: 'var(--texto)',
       }}
     >
-      <button
-        onClick={onClose}
-        aria-label="Fechar menu"
-        style={{
-          position: 'absolute',
-          top: 22,
-          right: 22,
-          background: 'transparent',
-          border: 0,
-          color: 'var(--cream)',
-          cursor: 'pointer',
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20">
-          <path d="M2 2L18 18M18 2L2 18" stroke="currentColor" />
-        </svg>
-      </button>
-
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, marginBottom: 30 }}>
-        <Logo height={48} />
-        <div className="italic" style={{ fontSize: 14, color: 'var(--gold-soft)' }}>
-          alicia &amp; fernando
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={onClose}
+          aria-label="Fechar menu"
+          style={{ background: 'transparent', border: 0, color: 'var(--azul-profundo)', cursor: 'pointer', padding: 8 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden>
+            <path d="M2 2L18 18M18 2L2 18" stroke="currentColor" />
+          </svg>
+        </button>
       </div>
 
-      <nav style={{ flex: 1 }}>
-        {items.map(([href, label], i) => {
+      <nav style={{ flex: 1, overflow: 'auto', marginTop: 12 }}>
+        {items.map(([href, label]) => {
           const active = pathname === href;
           return (
             <Link
               key={href}
               href={href}
               onClick={onClose}
+              className="serif"
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                width: '100%',
-                background: 'transparent',
-                border: 0,
+                display: 'block',
                 padding: '14px 0',
                 textDecoration: 'none',
-                borderBottom: '1px solid rgba(239,231,219,.08)',
-                color: 'var(--cream)',
-                opacity: open ? 1 : 0,
-                transform: open ? 'translateX(0)' : 'translateX(-10px)',
-                transition: `opacity .6s ${i * 60 + 200}ms, transform .6s ${i * 60 + 200}ms`,
+                color: 'var(--azul-profundo)',
+                fontSize: 32,
+                lineHeight: 1.15,
+                borderBottom: active ? '1px solid var(--dourado)' : '1px solid var(--linha)',
+                fontStyle: active ? 'italic' : 'normal',
               }}
             >
-              <span
-                className="serif"
-                style={{
-                  fontSize: 26,
-                  fontWeight: 300,
-                  fontStyle: active ? 'italic' : 'normal',
-                  color: active ? 'var(--gold-soft)' : 'var(--cream)',
-                }}
-              >
-                {label}
-              </span>
-              <span className="mono" style={{ fontSize: 9, color: 'rgba(239,231,219,.4)' }}>
-                0{i + 1}
-              </span>
+              {label}
             </Link>
           );
         })}
       </nav>
 
-      <div style={{ textAlign: 'center', marginTop: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ marginTop: 24 }}>
+        <Link href="/#confirmar" onClick={onClose} className="btn btn-primary" style={{ width: '100%' }}>
+          Confirmar presença
+        </Link>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 22 }}>
           <Ornament />
-        </div>
-        <div className="mono" style={{ fontSize: 9, marginTop: 14, color: 'rgba(239,231,219,.5)', letterSpacing: '.25em' }}>
-          28 · 11 · 2026
         </div>
       </div>
     </div>

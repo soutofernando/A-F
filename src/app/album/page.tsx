@@ -64,8 +64,8 @@ export default function AlbumPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'var(--ink)',
-        color: 'var(--cream)',
+        background: 'var(--bg)',
+        color: 'var(--texto)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -83,7 +83,7 @@ export default function AlbumPage() {
         />
         <div
           className="italic"
-          style={{ fontSize: 13, color: 'rgba(239,231,219,.55)', marginTop: 10, maxWidth: 320 }}
+          style={{ fontSize: 13, color: 'var(--texto-suave)', marginTop: 10, maxWidth: 320 }}
         >
           deslize para ver os dias que nos trouxeram até aqui.
         </div>
@@ -149,10 +149,10 @@ export default function AlbumPage() {
           width: '100%',
         }}
       >
-        <div className="mono" style={{ fontSize: 10, color: 'rgba(239,231,219,.55)' }}>
+        <div className="mono" style={{ fontSize: 10, color: 'var(--texto-suave)' }}>
           {String(active + 1).padStart(2, '0')} / {String(PHOTOS.length).padStart(2, '0')}
         </div>
-        <div style={{ flex: 1, height: 1, background: 'rgba(239,231,219,.14)', margin: '0 16px', position: 'relative' }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--linha)', margin: '0 16px', position: 'relative' }}>
           <div
             style={{
               position: 'absolute',

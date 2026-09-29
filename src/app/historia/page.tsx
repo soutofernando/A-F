@@ -56,7 +56,7 @@ const MOMENTS: Moment[] = [
 
 export default function HistoriaPage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--ink)', color: 'var(--cream)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--texto)' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '120px 22px 20px' }}>
         <div className="micro" style={{ color: 'var(--gold-soft)' }}>
           CAPÍTULO I
@@ -116,7 +116,7 @@ export default function HistoriaPage() {
                   style={{
                     fontSize: 13,
                     lineHeight: 1.65,
-                    color: 'rgba(239,231,219,.75)',
+                    color: 'var(--texto-suave)',
                     marginTop: 8,
                     fontFamily: 'var(--font-inter)',
                     fontWeight: 300,

@@ -56,3 +56,5 @@ begin
         confirmed_at = now();
 end;
 $$;
+
+grant execute on function public.submit_rsvp(uuid, text, integer, text) to anon, authenticated;

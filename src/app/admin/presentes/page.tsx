@@ -5,6 +5,7 @@ import {
   Card,
   Checkbox,
   Field,
+  FileField,
   PageHeader,
   Pill,
   SelectField,
@@ -12,10 +13,10 @@ import {
   SubmitButton,
   TextField,
 } from '@/components/admin/ui';
+import { resolveGiftImageIdFromForm } from '@/lib/admin/upload-presentes-image';
+import { GIFT_CATEGORIES_PUBLIC_LABEL, GIFT_CATEGORY_IDS } from '@/lib/gift-categories';
 
 export const dynamic = 'force-dynamic';
-
-const GIFT_CATEGORIES = ['Casa', 'Cozinha', 'Lua de mel', 'Pix'] as const;
 
 const formatBRL = (cents: number | null | undefined) => {
   if (cents == null) return '—';
@@ -31,18 +32,22 @@ async function createGift(formData: FormData) {
   const priceReais = String(formData.get('price') ?? '').replace(',', '.').trim();
   const priceCents = priceReais ? Math.round(parseFloat(priceReais) * 100) : null;
 
+  const image_id = await resolveGiftImageIdFromForm(formData, title);
+
   const supabase = await createClient();
   await supabase.from('gifts').insert({
     title,
     category,
     description: String(formData.get('description') ?? '').trim() || null,
     price_cents: Number.isFinite(priceCents) ? priceCents : null,
-    image_id: String(formData.get('image_id') ?? '') || null,
+    image_id,
     pix_enabled: formData.get('pix_enabled') === 'on',
     card_enabled: formData.get('card_enabled') === 'on',
     display_order: Number(formData.get('display_order') ?? 0) || 0,
   });
   revalidatePath('/admin/presentes');
+  revalidatePath('/presentes');
+  revalidatePath('/admin/imagens');
 }
 
 async function deleteGift(formData: FormData) {
@@ -97,11 +102,12 @@ export default async function PresentesPage() {
   const taken = list.filter((g) => g.taken_by_name).length;
   const totalValue = list.reduce((sum, g) => sum + (g.price_cents ?? 0), 0);
 
+  const presentesImages = imgList.filter((img) => img.context === 'presentes');
   const imageOptions = [
     { value: '', label: '— sem imagem —' },
-    ...imgList.map((img) => ({
+    ...presentesImages.map((img) => ({
       value: img.id,
-      label: `[${img.context}] ${img.alt ?? img.storage_path}`,
+      label: img.alt ?? img.storage_path,
     })),
   ];
 
@@ -110,7 +116,7 @@ export default async function PresentesPage() {
       <PageHeader
         kicker="PRESENTES"
         title="lista de presentes"
-        subtitle="Categorias visíveis no site público: Casa · Cozinha · Lua de mel · PIX."
+        subtitle={`Categorias visíveis no site público: ${GIFT_CATEGORIES_PUBLIC_LABEL}.`}
       />
 
       <div
@@ -128,13 +134,13 @@ export default async function PresentesPage() {
       </div>
 
       <Card title="Adicionar presente">
-        <form action={createGift} style={{ display: 'grid', gap: 14 }}>
+        <form action={createGift} encType="multipart/form-data" style={{ display: 'grid', gap: 14 }}>
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <Field label="Título" name="title" required placeholder="Jogo de panelas de cobre" />
             <SelectField
               label="Categoria"
               name="category"
-              options={GIFT_CATEGORIES}
+              options={GIFT_CATEGORY_IDS}
               defaultValue="Casa"
               required
             />
@@ -142,7 +148,26 @@ export default async function PresentesPage() {
             <Field label="Ordem de exibição" name="display_order" type="number" defaultValue={0} />
           </div>
 
-          <SelectField label="Imagem (opcional)" name="image_id" options={imageOptions} />
+          <FileField
+            label="Foto do presente"
+            name="file"
+            hint="JPG, PNG ou WebP. Enviada para a galeria (contexto presentes) e vinculada a este item."
+          />
+          <Field
+            label="Texto da foto (opcional)"
+            name="image_alt"
+            placeholder="Se vazio, usa o título do presente"
+          />
+          {presentesImages.length > 0 ? (
+            <SelectField
+              label="Ou escolher foto já enviada"
+              name="image_id"
+              options={imageOptions}
+              hint="Ignorado se você enviar um arquivo novo acima."
+            />
+          ) : (
+            <input type="hidden" name="image_id" value="" />
+          )}
 
           <TextField label="Descrição (opcional)" name="description" rows={2} />
 
