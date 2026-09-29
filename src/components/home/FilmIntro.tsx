@@ -20,6 +20,7 @@ export function FilmIntro({ onDone }: Props) {
     document.documentElement.classList.remove('intro-lock');
     setScrollLocked(false);
     setAlive(false);
+    window.dispatchEvent(new CustomEvent('aef-film-intro-done'));
     done.current?.();
   };
 

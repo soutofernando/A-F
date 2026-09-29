@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 import { Countdown } from '@/components/Countdown';
@@ -33,44 +33,96 @@ function SplitName({ text }: { text: string }) {
   );
 }
 
+function revealHeroRest() {
+  document.querySelector('.hero-stage')?.classList.remove('hero-intro-pending');
+  gsap.to('.hero-char, .hero-amp', {
+    y: 0,
+    autoAlpha: 1,
+    filter: 'blur(0px)',
+    duration: 0.7,
+    stagger: 0.035,
+    ease: 'power3.out',
+    delay: 0.08,
+  });
+  gsap.to('.hero-phrase-mask span', {
+    yPercent: 0,
+    duration: 0.9,
+    ease: 'power3.out',
+    delay: 0.42,
+  });
+  gsap.to('.hero-meta', {
+    y: 0,
+    autoAlpha: 1,
+    duration: 0.75,
+    stagger: 0.1,
+    ease: 'power3.out',
+    delay: 0.58,
+  });
+}
+
+function playAfIntro() {
+  gsap
+    .timeline({ onComplete: revealHeroRest })
+    .set('.hero-logo-stage', { autoAlpha: 1 })
+    .fromTo(
+      '.hero-logo-inner',
+      { rotationY: 0, scale: 0.9 },
+      { rotationY: 360, scale: 1, duration: 1.75, ease: 'power2.inOut' },
+    );
+}
+
 export function Hero({ name1, name2, subtitle, whenLine, target }: Props) {
   const { paint, shift } = useHeroScene();
   const phrase = subtitle.replace(/^[—–-]\s*/, '');
 
   useLayoutEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
+    if (reduced) {
+      document.querySelector('.hero-stage')?.classList.remove('hero-intro-pending');
+      return;
+    }
+
     const ctx = gsap.context(() => {
-      gsap.from('.hero-logo', { y: 24, autoAlpha: 0, duration: 0.9, ease: 'power3.out' });
-      gsap.from('.hero-char', {
-        y: 16,
-        autoAlpha: 0,
-        filter: 'blur(8px)',
-        duration: 0.7,
-        stagger: 0.035,
-        ease: 'power3.out',
-        delay: 0.15,
-      });
-      gsap.from('.hero-phrase-mask span', {
-        yPercent: 110,
-        duration: 0.9,
-        ease: 'power3.out',
-        delay: 0.55,
-      });
-      gsap.from('.hero-meta', {
-        y: 14,
-        autoAlpha: 0,
-        duration: 0.75,
-        stagger: 0.1,
-        ease: 'power3.out',
-        delay: 0.75,
-      });
+      gsap.set('.hero-logo-stage', { autoAlpha: 0 });
+      gsap.set('.hero-logo-inner', { rotationY: 0, transformPerspective: 900 });
+      gsap.set('.hero-char, .hero-amp', { y: 16, autoAlpha: 0, filter: 'blur(8px)' });
+      gsap.set('.hero-phrase-mask span', { yPercent: 110 });
+      gsap.set('.hero-meta', { y: 14, autoAlpha: 0 });
     });
-    return () => ctx.revert();
+
+    const onIntroDone = () => playAfIntro();
+    window.addEventListener('aef-hero-intro-done', onIntroDone);
+
+    return () => {
+      window.removeEventListener('aef-hero-intro-done', onIntroDone);
+      ctx.revert();
+    };
   }, [name1, name2]);
 
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || paint) return;
+
+    let cancelled = false;
+    const frame = window.requestAnimationFrame(() => {
+      if (cancelled || paint) return;
+
+      const signalDone = () => window.dispatchEvent(new CustomEvent('aef-hero-intro-done'));
+      if (document.documentElement.classList.contains('intro-lock')) {
+        window.addEventListener('aef-film-intro-done', signalDone, { once: true });
+      } else {
+        signalDone();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [paint]);
+
   return (
-    <section className="hero-stage" style={{ position: 'relative', minHeight: '100svh', overflow: 'hidden', background: 'var(--paper)' }}>
+    <section className="hero-stage hero-intro-pending" style={{ position: 'relative', minHeight: '100svh', overflow: 'hidden', background: 'var(--paper)' }}>
       {/* Static watercolor is the LCP. The canvas paints over it. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -104,6 +156,11 @@ export function Hero({ name1, name2, subtitle, whenLine, target }: Props) {
           background: 'linear-gradient(180deg, rgba(248,245,238,0) 28%, rgba(248,245,238,.55) 62%, var(--bg) 100%)',
         }}
       >
+        <div className="hero-logo-stage">
+          <div className="hero-logo-inner">
+            <Logo priority className="hero-logo hero-logo-mark" height={120} />
+          </div>
+        </div>
         <h1
           aria-label={`${name1} e ${name2}`}
           style={{
@@ -114,7 +171,6 @@ export function Hero({ name1, name2, subtitle, whenLine, target }: Props) {
             gap: 12,
           }}
         >
-          <Logo priority className="hero-logo hero-logo-mark" height={120} />
           <span
             className="hero-names serif"
             style={{

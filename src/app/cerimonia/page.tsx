@@ -62,8 +62,6 @@ export default function CerimoniaPage() {
             </div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6 }}>
               sábado · 28 de novembro de 2026
-              <br />
-              pedimos a gentileza de chegar com 30 minutos de antecedência.
             </div>
             <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <Btn variant="ghost" small>
@@ -96,12 +94,6 @@ export default function CerimoniaPage() {
               <br />
               da Mata
             </div>
-            <div style={{ fontSize: 13, color: 'var(--texto-suave)', marginTop: 10, lineHeight: 1.6 }}>
-              almoço, festa e dança até cair a noite.
-              <br />
-              transfer saindo da igreja às 10h30.
-            </div>
-
             <div
               style={{
                 marginTop: 20,

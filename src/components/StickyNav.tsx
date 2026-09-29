@@ -10,8 +10,6 @@ const NAV: Array<[string, string]> = [
   ['/#dia', 'o grande dia'],
   ['/#confirmar', 'presença'],
   ['/presentes', 'presentes'],
-  ['/#album', 'álbum'],
-  ['/#recados', 'recados'],
 ];
 
 type Props = { onMenu: () => void };

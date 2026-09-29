@@ -136,13 +136,6 @@ export function GiftsBand({
           </div>
         )}
       </div>
-      <div className="phrase-blue-c" style={{ marginTop: 28, textAlign: 'center' }}>
-        <div className="micro">Pix · Banco Inter</div>
-        <p className="serif" style={{ fontSize: 22, marginTop: 8, color: 'var(--azul-profundo)' }}>
-          casamento@aliciafernando.com
-        </p>
-        <p className="italic">contribua com o valor que seu coração sentir.</p>
-      </div>
     </section>
   );
 }

@@ -22,6 +22,7 @@ const FRAG = /* glsl */ `
   uniform float uProgress;
   uniform vec2 uPointer;
   uniform float uGlow;
+  uniform float uRayAngle;
   uniform vec2 uCross;
   uniform float uWater;
   uniform vec2 uRes;
@@ -105,9 +106,10 @@ const FRAG = /* glsl */ `
     vec2 crossUv = uCross;
     float d = length(uv - crossUv);
     float halo = exp(-d * 26.0) * uGlow;
-    float ang = atan(uv.y - crossUv.y, uv.x - crossUv.x);
+    float ang = atan(uv.y - crossUv.y, uv.x - crossUv.x) + uRayAngle;
     float rays = pow(max(sin(ang * 5.0), 0.0), 10.0) * exp(-d * 8.0) * uGlow * 0.35;
-    col += vec3(0.878, 0.690, 0.298) * (halo + rays);
+    float burstHalo = exp(-d * 18.0) * max(uGlow - 0.55, 0.0) * 0.45;
+    col += vec3(0.878, 0.690, 0.298) * (halo + rays + burstHalo);
     float vig = smoothstep(0.42, 1.05, dist);
     col = mix(col, col * vec3(0.78, 0.72, 0.62), vig * 0.45);
 
@@ -155,6 +157,7 @@ export function mountHero(canvas: HTMLCanvasElement, mobile: boolean, opts: Moun
     uProgress: { value: 0 },
     uPointer: { value: new THREE.Vector2() },
     uGlow: { value: 0.45 },
+    uRayAngle: { value: 0 },
     uCross: { value: new THREE.Vector2(0.507, 0.762) },
     uWater: { value: 1 },
     uRes: { value: new THREE.Vector2(1, 1) },
@@ -380,7 +383,56 @@ export function mountHero(canvas: HTMLCanvasElement, mobile: boolean, opts: Moun
   const start = performance.now();
   let burstUntil = 0;
   const baseGlow = compact ? 0.38 : 0.45;
+  const peakGlow = compact ? baseGlow : 2.55;
   const revealDuration = compact ? 1.8 : 2.5;
+
+  const easeIo = (t: number) => t * t * (3 - 2 * t);
+  let crossIntroActive = false;
+  let crossIntroDone = false;
+  let crossIntroStart = 0;
+  const crossIntroTotal = 2.35;
+  const beginCrossIntro = () => {
+    if (compact || crossIntroDone || crossIntroActive) return;
+    crossIntroActive = true;
+    crossIntroStart = performance.now();
+  };
+  if (!compact) {
+    if (document.documentElement.classList.contains('intro-lock')) {
+      window.addEventListener('aef-film-intro-done', beginCrossIntro, { once: true });
+    } else {
+      beginCrossIntro();
+    }
+  }
+
+  const finishCrossIntro = () => {
+    if (crossIntroDone) return;
+    crossIntroDone = true;
+    crossIntroActive = false;
+    window.dispatchEvent(new CustomEvent('aef-hero-intro-done'));
+  };
+
+  const sampleCrossIntro = (elapsed: number) => {
+    const t1 = 0.62;
+    const t2 = 1.52;
+    const t3 = crossIntroTotal;
+    if (elapsed >= t3) {
+      return { glow: baseGlow, angle: 0, done: true };
+    }
+    if (elapsed < t1) {
+      const k = easeIo(elapsed / t1);
+      return { glow: baseGlow + (peakGlow - baseGlow) * k, angle: 0, done: false };
+    }
+    if (elapsed < t2) {
+      const k = easeIo((elapsed - t1) / (t2 - t1));
+      return { glow: peakGlow, angle: k * 0.62, done: false };
+    }
+    const k = easeIo((elapsed - t2) / (t3 - t2));
+    return {
+      glow: peakGlow + (baseGlow - peakGlow) * k,
+      angle: 0.62 * (1 - k),
+      done: false,
+    };
+  };
 
   const frame = (now: number) => {
     raf = requestAnimationFrame(frame);
@@ -453,8 +505,15 @@ export function mountHero(canvas: HTMLCanvasElement, mobile: boolean, opts: Moun
       attr.needsUpdate = true;
       burstPoints.material.opacity = Math.max(0, (burstUntil - now) / 2000);
       uniforms.uGlow.value = 1.35;
+      uniforms.uRayAngle.value = 0;
+    } else if (crossIntroActive) {
+      const sample = sampleCrossIntro((now - crossIntroStart) / 1000);
+      uniforms.uGlow.value = sample.glow;
+      uniforms.uRayAngle.value = sample.angle;
+      if (sample.done) finishCrossIntro();
     } else {
       uniforms.uGlow.value += (baseGlow + Math.sin(t * 1.3) * 0.12 - uniforms.uGlow.value) * 0.08;
+      uniforms.uRayAngle.value += (0 - uniforms.uRayAngle.value) * 0.12;
       burstPoints.material.opacity = 0;
     }
 
@@ -486,6 +545,7 @@ export function mountHero(canvas: HTMLCanvasElement, mobile: boolean, opts: Moun
       window.removeEventListener('deviceorientation', onTilt);
       window.removeEventListener('pointerdown', askTilt);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('aef-film-intro-done', beginCrossIntro);
       unsubDolly();
       quad.geometry.dispose();
       (quad.material as THREE.Material).dispose();

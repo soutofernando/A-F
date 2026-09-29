@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 type NetworkInfo = { saveData?: boolean };
 
@@ -18,7 +18,7 @@ export function useHeroScene() {
   const [paint, setPaint] = useState(false);
   const [shift, setShift] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isQuietDevice()) return;
     try {
       const probe = document.createElement('canvas');

@@ -1,13 +1,27 @@
-import Link from 'next/link';
 import { FieldBackdrop } from '@/components/FieldBackdrop';
+import { DressCodeCard } from '@/components/home/DressCodeCard';
 import { WatercolorChurchCard } from '@/components/home/WatercolorChurchCard';
 import { RusticIcon, type RusticName } from '@/components/RusticIcon';
 
-const FACTS: Array<{ k: string; v: string; detail: string; icon: RusticName; tone: string }> = [
-  { k: 'Dia', v: 'sábado', detail: '28 de novembro de 2026', icon: 'sun', tone: 'var(--dourado-esc)' },
-  { k: 'Horário', v: '09:00', detail: 'pedimos a gentileza de chegar com 30 minutos de antecedência.', icon: 'clock', tone: 'var(--azul)' },
-  { k: 'Cerimônia', v: 'Sagrado Coração de Jesus', detail: 'sábado · 28 de novembro de 2026', icon: 'church', tone: 'var(--terracota)' },
-  { k: 'Recepção', v: 'Sítio São José da Mata', detail: 'almoço, festa e dança até cair a noite. transfer saindo da igreja às 10h30.', icon: 'olive', tone: 'var(--oliva-esc)' },
+const FACTS: Array<{ k: string; v: string; detail?: string; icon: RusticName; tone: string; mapsQuery?: string }> = [
+  { k: 'Dia', v: '28 de novembro', detail: 'sábado · 2026', icon: 'sun', tone: 'var(--dourado-esc)' },
+  { k: 'Horário', v: '09:00', detail: 'pedimos pontualidade', icon: 'clock', tone: 'var(--azul)' },
+  {
+    k: 'Cerimônia',
+    v: 'Sagrado Coração de Jesus',
+    detail: 'Catolé · Campina Grande',
+    icon: 'church',
+    tone: 'var(--terracota)',
+    mapsQuery: 'Igreja Sagrado Coração de Jesus, Campina Grande',
+  },
+  {
+    k: 'Recepção',
+    v: 'Sítio São José da Mata',
+    detail: 'Rua Miguel Leão, 69',
+    icon: 'olive',
+    tone: 'var(--oliva-esc)',
+    mapsQuery: 'Rua Miguel Leão, 69, São José da Mata',
+  },
 ];
 
 export function BigDay() {
@@ -21,38 +35,40 @@ export function BigDay() {
           </span>
           O grande dia
         </h2>
-        <div
-          style={{
-            marginTop: 32,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 14,
-          }}
-        >
+
+        <div className="big-day-facts">
           {FACTS.map((fact) => (
-            <article
-              key={fact.k}
-              style={{ background: 'var(--surface)', border: '1px solid var(--linha)', borderRadius: 20, padding: '20px 18px' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                <div className="micro" style={{ color: 'var(--texto-suave)' }}>
-                  {fact.k}
-                </div>
-                <span className="medallion" style={{ width: 52, height: 52, color: fact.tone, background: 'var(--bg-alt)' }}>
-                  <RusticIcon name={fact.icon} size={28} />
+            <article key={fact.k} className="big-day-fact">
+              <div className="big-day-fact__head">
+                <span className="big-day-fact__icon" style={{ color: fact.tone }}>
+                  <RusticIcon name={fact.icon} size={18} />
                 </span>
+                <span className="big-day-fact__label">{fact.k}</span>
               </div>
-              <p className="serif" style={{ fontSize: fact.k === 'Horário' || fact.k === 'Dia' ? 40 : 28, color: 'var(--azul-profundo)', lineHeight: 1.05, marginTop: 8 }}>
-                {fact.v}
-              </p>
-              <p style={{ marginTop: 8, color: 'var(--texto-suave)', fontSize: 16 }}>{fact.detail}</p>
+              <p className="serif big-day-fact__value">{fact.v}</p>
+              <div className="big-day-fact__foot">
+                <p className="big-day-fact__detail">{fact.detail ?? '\u00a0'}</p>
+                {fact.mapsQuery ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fact.mapsQuery)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="big-day-fact__link"
+                  >
+                    <RusticIcon name="gate" size={14} />
+                    Como chegar
+                  </a>
+                ) : (
+                  <span className="big-day-fact__link-slot" aria-hidden />
+                )}
+              </div>
             </article>
           ))}
         </div>
 
-        <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-          <article style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--linha)' }}>
-            <WatercolorChurchCard minHeight={320}>
+        <div className="big-day-bento">
+          <article style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--linha)', minHeight: 260 }}>
+            <WatercolorChurchCard minHeight={260}>
               <div
                 aria-hidden
                 style={{
@@ -68,7 +84,7 @@ export function BigDay() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary btn-sm"
-                style={{ position: 'absolute', top: 16, left: 16, zIndex: 2 }}
+                style={{ position: 'absolute', top: 14, left: 14, zIndex: 2 }}
               >
                 <RusticIcon name="gate" size={16} />
                 Como chegar
@@ -77,10 +93,10 @@ export function BigDay() {
                 className="serif"
                 style={{
                   position: 'absolute',
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  fontSize: 'clamp(22px, 4vw, 28px)',
+                  left: 14,
+                  right: 14,
+                  bottom: 14,
+                  fontSize: 'clamp(20px, 3.5vw, 26px)',
                   color: 'var(--ink-blue)',
                   zIndex: 2,
                   textShadow: '0 1px 0 rgba(248, 245, 238, .85)',
@@ -90,20 +106,7 @@ export function BigDay() {
               </p>
             </WatercolorChurchCard>
           </article>
-          <article style={{ background: 'var(--surface)', border: '1px solid var(--linha)', borderRadius: 20, padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--madeira)' }}>
-              <RusticIcon name="dress" size={26} />
-              <span className="micro" style={{ color: 'var(--texto-suave)' }}>
-                Código de vestimenta
-              </span>
-            </div>
-            <p className="serif" style={{ fontSize: 32, color: 'var(--azul-profundo)', marginTop: 8 }}>
-              Traje <span className="italic">esporte fino</span>
-            </p>
-            <Link href="/dress-code" className="btn btn-secondary btn-sm" style={{ marginTop: 16 }}>
-              Ver referências
-            </Link>
-          </article>
+          <DressCodeCard />
         </div>
       </div>
     </section>

@@ -2,20 +2,46 @@
 
 import { WordReveal } from '@/components/WordReveal';
 import { Ph } from '@/components/Ph';
+import {
+  DRESS_REFERENCE_COPY,
+  FORBIDDEN_REMINDER,
+  FORBIDDEN_SWATCHES,
+  SUGGESTED_SWATCHES,
+  type DressSwatch,
+} from '@/lib/dress-code-content';
 
-const PALETTE = [
-  { c: '#EDE8D0', n: 'bege' },
-  { c: '#BEB8A0', n: 'areia' },
-  { c: '#5A564C', n: 'fumo' },
-  { c: '#25221E', n: 'grafite' },
-  { c: '#0A0908', n: 'ônix' },
-];
-
-const AVOID: Array<[string, string]> = [
-  ['✕', 'branco, off-white ou marfim — cores da noiva'],
-  ['✕', 'roupas esportivas, jeans ou tênis esportivo'],
-  ['✕', 'vermelho vibrante ou neons'],
-];
+function SwatchGrid({ swatches }: { swatches: DressSwatch[] }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
+      {swatches.map((s) => (
+        <div key={s.label} style={{ width: 56, textAlign: 'center' }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              margin: '0 auto',
+              borderRadius: '50%',
+              background: s.color,
+              border: '1px solid rgba(14,11,9,.12)',
+            }}
+          />
+          <div
+            className="mono"
+            style={{
+              fontSize: 8,
+              color: 'var(--muted)',
+              marginTop: 6,
+              letterSpacing: '.1em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {s.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const REFS = ['LOOK · ELE', 'LOOK · ELA', 'LOOK · ELE 2', 'LOOK · ELA 2'];
 
@@ -46,60 +72,38 @@ export default function DressCodePage() {
         <div className="serif" style={{ fontSize: 28, letterSpacing: '.04em', fontWeight: 400 }}>
           TRAJE <span className="italic">esporte fino</span>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6, maxWidth: 360 }}>
-          pedimos um traje que combine com a elegância simples do dia — sem peso, sem rigidez, apenas beleza honesta.
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6, maxWidth: 420 }}>
+          {DRESS_REFERENCE_COPY}
         </div>
 
         <div style={{ marginTop: 28 }}>
           <div className="micro" style={{ color: 'var(--muted)' }}>
             PALETA SUGERIDA
           </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            {PALETTE.map((s) => (
-              <div key={s.n} style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ aspectRatio: '1', background: s.c, border: '1px solid rgba(14,11,9,.1)' }} />
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 8,
-                    color: 'var(--muted)',
-                    marginTop: 6,
-                    letterSpacing: '.1em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {s.n}
-                </div>
-              </div>
-            ))}
-          </div>
+          <SwatchGrid swatches={SUGGESTED_SWATCHES} />
         </div>
 
         <div style={{ marginTop: 28 }}>
           <div className="micro" style={{ color: 'var(--muted)' }}>
-            EVITE, POR FAVOR
+            CORES QUE NÃO PODEM SER USADAS
           </div>
-          <div className="hairline-dark" style={{ marginTop: 8 }} />
-          {AVOID.map(([k, v], i) => (
-            <div
-              key={i}
-              style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(14,11,9,.08)' }}
-            >
-              <div className="serif" style={{ fontSize: 16 }}>
-                {k}
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontFamily: 'var(--font-inter)',
-                  fontWeight: 300,
-                  lineHeight: 1.5,
-                }}
-              >
-                {v}
-              </div>
-            </div>
-          ))}
+          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8, lineHeight: 1.6 }}>
+            Todos os tons de vermelho, vinho e coral, além de branco e off-white.
+          </div>
+          <SwatchGrid swatches={FORBIDDEN_SWATCHES} />
+        </div>
+
+        <div
+          style={{
+            marginTop: 28,
+            padding: '16px 18px',
+            borderRadius: 12,
+            background: 'rgba(196, 30, 58, 0.06)',
+            border: '1px solid rgba(196, 30, 58, 0.12)',
+          }}
+        >
+          <div className="micro" style={{ color: 'var(--muted)' }}>LEMBRETE</div>
+          <p style={{ fontSize: 13, marginTop: 8, lineHeight: 1.55 }}>{FORBIDDEN_REMINDER}</p>
         </div>
 
         <div style={{ marginTop: 28 }}>
