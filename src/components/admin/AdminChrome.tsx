@@ -8,7 +8,8 @@ import { Logo } from '@/components/Logo';
 
 const NAV: Array<[string, string]> = [
   ['/admin', 'Visão geral'],
-  ['/admin/confirmacoes', 'Confirmações'],
+  ['/admin/presencas', 'Presenças'],
+  ['/admin/confirmacoes', 'Pré-confirmação'],
   ['/admin/convidados', 'Convidados'],
   ['/admin/presentes', 'Presentes'],
   ['/admin/imagens', 'Imagens'],

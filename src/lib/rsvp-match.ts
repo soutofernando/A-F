@@ -59,3 +59,21 @@ export function matchGuests<T extends NamedGuest>(guests: T[], raw: string): Mat
 
   return { kind: 'many' };
 }
+
+/** Guests that share the same non-empty `group_name` (one row per person in the admin list). */
+export function getFamilyMembers<T extends NamedGuest>(guests: T[], anchor: T): T[] {
+  const group = anchor.group_name?.trim();
+  if (!group) return [anchor];
+
+  const groupKey = normalizeName(group);
+  const members = guests.filter((guest) => {
+    const g = guest.group_name?.trim();
+    return g && normalizeName(g) === groupKey;
+  });
+
+  if (members.length <= 1) return [anchor];
+
+  return [...members].sort((a, b) =>
+    (guestSearchName(a) ?? '').localeCompare(guestSearchName(b) ?? '', 'pt-BR', { sensitivity: 'base' }),
+  );
+}

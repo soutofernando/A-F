@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { clearGuestRsvp } from '@/app/admin/confirmacoes/actions';
 import {
   Card,
   Field,
@@ -56,6 +57,13 @@ async function deleteGuest(formData: FormData) {
   revalidatePath('/admin/convidados');
 }
 
+async function removeRsvp(formData: FormData) {
+  'use server';
+  const guestId = String(formData.get('guest_id') ?? '');
+  await clearGuestRsvp(guestId);
+  revalidatePath('/admin/convidados');
+}
+
 type Guest = {
   id: string;
   slug: string;
@@ -95,7 +103,7 @@ export default async function ConvidadosPage() {
       <PageHeader
         kicker="CONVIDADOS"
         title="lista de convidados"
-        subtitle="Cadastre, organize por grupo e mesa, e acompanhe as confirmações."
+        subtitle="Cadastro da lista de convites. A confirmação de quem vai à festa está em Presenças; a pré-confirmação em Pré-confirmação."
       />
 
       <div
@@ -107,8 +115,12 @@ export default async function ConvidadosPage() {
           marginBottom: 28,
         }}
       >
-        <Stat label="Total" value={list.length} meta={`${pending} aguardando`} />
-        <Stat label="Confirmados" value={confirmed.length} meta={`${totalSeats} cadeira(s)`} />
+        <Stat label="Convites cadastrados" value={list.length} meta={`${pending} sem RSVP`} />
+        <Stat
+          label="Confirmaram (sim)"
+          value={confirmed.length}
+          meta={`${totalSeats} assento(s) com acompanhantes`}
+        />
         <Stat label="Recusaram" value={declined.length} />
       </div>
 
@@ -197,6 +209,14 @@ export default async function ConvidadosPage() {
                         >
                           editar
                         </Link>
+                        {rsvp && (
+                          <form action={removeRsvp} style={{ display: 'inline', marginRight: 12 }}>
+                            <input type="hidden" name="guest_id" value={g.id} />
+                            <SubmitButton variant="outline" small>
+                              desconfirmar
+                            </SubmitButton>
+                          </form>
+                        )}
                         <form action={deleteGuest} style={{ display: 'inline' }}>
                           <input type="hidden" name="id" value={g.id} />
                           <SubmitButton variant="danger" small>

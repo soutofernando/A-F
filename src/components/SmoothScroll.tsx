@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { bindLenis, headerScrollOffset } from '@/lib/scroll';
+import { bindLenis, getLenis, headerScrollOffset } from '@/lib/scroll';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,6 +22,27 @@ export function SmoothScroll() {
     bindLenis(lenis);
     if (document.documentElement.classList.contains('intro-lock')) lenis.stop();
     lenis.on('scroll', ScrollTrigger.update);
+
+    ScrollTrigger.scrollerProxy(document.documentElement, {
+      scrollTop(value?: number) {
+        const instance = getLenis();
+        if (!instance) return 0;
+        if (value !== undefined) {
+          instance.scrollTo(value, { immediate: true });
+        }
+        return instance.scroll;
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        };
+      },
+      pinType: document.documentElement.style.transform ? 'transform' : 'fixed',
+    });
+    ScrollTrigger.addEventListener('refresh', () => getLenis()?.resize());
     const onNativeScroll = () => ScrollTrigger.update();
     window.addEventListener('scroll', onNativeScroll, { passive: true });
     const tick = (time: number) => {

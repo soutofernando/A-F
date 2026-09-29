@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { ConfirmationPartyEditor } from '@/components/admin/ConfirmationPartyEditor';
 import {
   Card,
   PageHeader,
@@ -39,6 +40,18 @@ async function deleteConfirmation(formData: FormData) {
   revalidatePath('/admin/confirmacoes');
 }
 
+async function unconfirmFamily(formData: FormData) {
+  'use server';
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase
+    .from('confirmations')
+    .update({ attending: false, party_size: 0, names: [] })
+    .eq('id', id);
+  revalidatePath('/admin/confirmacoes');
+}
+
 export default async function ConfirmacoesPage() {
   const supabase = await createClient();
   const { data } = await supabase
@@ -54,13 +67,14 @@ export default async function ConfirmacoesPage() {
     (acc, c) => acc + (c.names ?? []).filter((n) => n.kind === 'child').length,
     0,
   );
+  const totalAdults = totalPeople - totalChildren;
 
   return (
     <div style={{ maxWidth: 980 }}>
       <PageHeader
         kicker="PRÉ-CONFIRMAÇÃO"
-        title="confirmações das famílias"
-        subtitle="Respostas enviadas pela página pública /confirmar — onde cada família digita os próprios nomes."
+        title="pré-confirmação das famílias"
+        subtitle="Respostas do link /confirmar (interesse inicial). Não substitui a confirmação de presença na home do site — veja em Presenças."
       />
 
       <div
@@ -72,12 +86,16 @@ export default async function ConfirmacoesPage() {
         }}
       >
         <Stat label="Famílias confirmadas" value={yes.length} meta={`${no.length} não poderão`} />
-        <Stat label="Pessoas confirmadas" value={totalPeople} meta="somando acompanhantes" />
-        <Stat label="Crianças" value={totalChildren} meta="entre os confirmados" />
+        <Stat label="Pessoas na pré-lista" value={totalPeople} meta="formulário /confirmar" />
+        <Stat label="Adultos" value={totalAdults} meta="marcados no formulário" />
+        <Stat label="Crianças" value={totalChildren} meta="marcadas no formulário" />
         <Stat label="Respostas no total" value={list.length} />
       </div>
 
-      <Card title="Todas as respostas" subtitle="Mais recentes primeiro.">
+      <Card
+        title="Todas as respostas"
+        subtitle="Mais recentes primeiro. Edite nomes, marque criança ou remova alguém — salva ao sair do campo ou ao clicar."
+      >
         {list.length === 0 ? (
           <div style={{ fontStyle: 'italic', color: '#6E6A5C', padding: '20px 0' }}>
             Nenhuma confirmação ainda. Envie o link /confirmar para as famílias.
@@ -106,29 +124,11 @@ export default async function ConfirmacoesPage() {
                       )}
                     </td>
                     <td style={adminTdStyle}>
-                      {(c.names ?? []).length === 0 ? (
-                        <span style={{ color: '#6E6A5C' }}>—</span>
-                      ) : (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {(c.names ?? []).map((n, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                fontSize: 12,
-                                padding: '3px 9px',
-                                borderRadius: 999,
-                                border: '1px solid rgba(239,231,219,.15)',
-                                background:
-                                  n.kind === 'child' ? 'rgba(212,175,122,.16)' : 'rgba(239,231,219,.05)',
-                                color: n.kind === 'child' ? '#E8C58A' : 'inherit',
-                              }}
-                            >
-                              {n.kind === 'child' ? '✿ ' : ''}
-                              {n.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <ConfirmationPartyEditor
+                        confirmationId={c.id}
+                        attending={c.attending}
+                        initialNames={c.names ?? []}
+                      />
                     </td>
                     <td style={{ ...adminTdStyle, fontSize: 12, color: '#A9A492' }}>
                       {c.contact || '—'}
@@ -140,12 +140,22 @@ export default async function ConfirmacoesPage() {
                       {fmt.format(new Date(c.created_at))}
                     </td>
                     <td style={adminTdStyle}>
-                      <form action={deleteConfirmation}>
-                        <input type="hidden" name="id" value={c.id} />
-                        <SubmitButton variant="danger" small>
-                          excluir
-                        </SubmitButton>
-                      </form>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+                        {c.attending && (
+                          <form action={unconfirmFamily}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <SubmitButton variant="outline" small>
+                              desconfirmar
+                            </SubmitButton>
+                          </form>
+                        )}
+                        <form action={deleteConfirmation}>
+                          <input type="hidden" name="id" value={c.id} />
+                          <SubmitButton variant="danger" small>
+                            excluir
+                          </SubmitButton>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))}

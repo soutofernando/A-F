@@ -14,6 +14,7 @@ import { Ornament } from '@/components/Ornament';
 import { Celebration } from '@/components/Celebration';
 import { WEDDING_DATE } from '@/components/Countdown';
 import { createClient } from '@/lib/supabase/client';
+import { getFamilyMembers, matchGuests } from '@/lib/rsvp-match';
 import './confirmar.css';
 import '../rsvp/celebration.css';
 import { Logo } from '@/components/Logo';
@@ -27,6 +28,13 @@ type Person = { id: number; name: string; kind: Kind };
 type Status = 'idle' | 'submitting' | 'done';
 type Decision = 'yes' | 'no';
 
+type ListedGuest = {
+  id: string;
+  display_name: string;
+  full_name: string | null;
+  group_name: string | null;
+};
+
 let _pid = 1;
 const newPerson = (): Person => ({ id: _pid++, name: '', kind: 'adult' });
 
@@ -38,6 +46,67 @@ export default function ConfirmarPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [savedNames, setSavedNames] = useState<Person[]>([]);
+  const [guests, setGuests] = useState<ListedGuest[]>([]);
+  const [familyOffer, setFamilyOffer] = useState<{ key: string; label: string; names: string[] } | null>(null);
+  const dismissedFamilyKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    (async () => {
+      const { data } = await supabase
+        .from('guests')
+        .select('id, display_name, full_name, group_name')
+        .order('display_name');
+      setGuests((data ?? []) as ListedGuest[]);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const lead = people[0]?.name.trim() ?? '';
+    if (lead.length < 2 || guests.length === 0) {
+      setFamilyOffer(null);
+      return;
+    }
+    const match = matchGuests(guests, lead);
+    if (match.kind !== 'one') {
+      setFamilyOffer(null);
+      return;
+    }
+    const members = getFamilyMembers(guests, match.guest);
+    if (members.length <= 1) {
+      setFamilyOffer(null);
+      return;
+    }
+    const key = members.map((m) => m.id).join('|');
+    if (dismissedFamilyKey.current === key) {
+      setFamilyOffer(null);
+      return;
+    }
+    const names = members.map((m) => (m.full_name || m.display_name).trim());
+    const alreadyAll =
+      people.length === names.length && names.every((n, i) => normalizePersonName(people[i]?.name ?? '') === normalizePersonName(n));
+    if (alreadyAll) {
+      setFamilyOffer(null);
+      return;
+    }
+    setFamilyOffer({
+      key,
+      label: match.guest.group_name?.trim() || 'sua família',
+      names,
+    });
+  }, [guests, people]);
+
+  const applyFamilyOffer = () => {
+    if (!familyOffer) return;
+    setPeople(familyOffer.names.map((name) => ({ id: _pid++, name, kind: 'adult' as Kind })));
+    dismissedFamilyKey.current = familyOffer.key;
+    setFamilyOffer(null);
+  };
+
+  const dismissFamilyOffer = () => {
+    if (familyOffer) dismissedFamilyKey.current = familyOffer.key;
+    setFamilyOffer(null);
+  };
 
   const addPerson = () => setPeople((p) => (p.length >= 30 ? p : [...p, newPerson()]));
 
@@ -183,9 +252,28 @@ export default function ConfirmarPage() {
                 </div>
 
                 <p className="cf-hint">
-                  Toque no selo <span className="cf-hint-pill">adulto</span> ao lado do nome para marcar
-                  como <span className="cf-hint-pill cf-hint-pill-child">✿ criança</span>.
+                  Digite o nome de qualquer pessoa da família: se estiverem no mesmo grupo no convite,
+                  sugerimos incluir todos — remova quem não for comparecer. Toque no selo{' '}
+                  <span className="cf-hint-pill">adulto</span> para marcar como{' '}
+                  <span className="cf-hint-pill cf-hint-pill-child">✿ criança</span>.
                 </p>
+
+                {familyOffer && (
+                  <div className="cf-family-offer">
+                    <p>
+                      Encontramos <strong>{familyOffer.names.length} pessoas</strong> no grupo{' '}
+                      <em>{familyOffer.label}</em>. Deseja confirmar a família inteira?
+                    </p>
+                    <div className="cf-family-offer-actions">
+                      <button type="button" className="cf-family-offer-yes" onClick={applyFamilyOffer}>
+                        incluir todos
+                      </button>
+                      <button type="button" className="cf-family-offer-no" onClick={dismissFamilyOffer}>
+                        só quem já escrevi
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   {people.map((p, i) => (
@@ -247,6 +335,15 @@ export default function ConfirmarPage() {
       </section>
     </main>
   );
+}
+
+function normalizePersonName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /* ─── Linha de pessoa (container animado + tilt 3D) ──────────────────── */

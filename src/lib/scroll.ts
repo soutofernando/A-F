@@ -7,6 +7,10 @@ export function bindLenis(instance: Lenis | null) {
   lenis = instance;
 }
 
+export function getLenis() {
+  return lenis;
+}
+
 export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

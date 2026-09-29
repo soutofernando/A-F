@@ -82,8 +82,9 @@ export default function HomePage() {
           <h2 className="serif reveal-line" style={{ fontSize: 'clamp(40px, 6vw, 64px)', color: 'var(--ink-blue)', fontWeight: 400, lineHeight: 0.95, marginBottom: 8 }}>
             Confirmar presença
           </h2>
-          <p style={{ color: 'var(--texto-suave)', marginBottom: 22, maxWidth: 460 }}>
-            É o primeiro passo. Depois, se quiser, a lista de presentes abre no mesmo fôlego.
+          <p style={{ color: 'var(--texto-suave)', marginBottom: 22, maxWidth: 520 }}>
+            Esta é a confirmação oficial de presença na festa — busque seu nome na lista de convidados.
+            Se você já fez a pré-confirmação em outro link, confirme aqui de novo quem de fato vai.
           </p>
           <RsvpForm embedded />
         </div>

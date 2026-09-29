@@ -399,6 +399,44 @@
   color: #7c5c2e;
 }
 
+.cf-family-offer {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(168,138,92,.45);
+  background: rgba(212,175,122,.12);
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.cf-family-offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.cf-family-offer-yes,
+.cf-family-offer-no {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.cf-family-offer-yes {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+}
+.cf-family-offer-no {
+  border: 1px solid rgba(14,11,9,.22);
+  background: transparent;
+  color: var(--muted);
+}
+
 .cf-person {
   position: relative;
   display: flex;
