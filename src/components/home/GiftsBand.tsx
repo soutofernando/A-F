@@ -1,37 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { GIFT_CATEGORIES } from '@/lib/gift-categories';
+import { PUBLIC_GIFT_SELECT, toPublicGifts, type Gift, type GiftRow } from '@/lib/gifts';
 import { GIFTS_REQUIRE_RSVP } from '@/lib/site';
 import { hasConfirmedPresence } from '@/lib/rsvp-storage';
+import { createClient } from '@/lib/supabase/client';
 import { FieldBackdrop } from '@/components/FieldBackdrop';
 import { RusticIcon, type RusticName } from '@/components/RusticIcon';
 
-export type Gift = {
-  id: string | number;
-  name: string;
-  price: string;
-  cat: string;
-  taken: boolean;
-  label: string;
-  imageUrl?: string | null;
-};
-
-const GIFTS: Gift[] = [
-  { id: 1, name: 'Jogo de panelas em cobre', price: 'R$ 480', cat: 'Cozinha', taken: false, label: 'PANELAS · COBRE' },
-  { id: 2, name: 'Noite em Paraty', price: 'R$ 650', cat: 'Lua de mel', taken: false, label: 'PARATY · POUSADA' },
-  { id: 3, name: 'Jogo de taças de cristal', price: 'R$ 320', cat: 'Cozinha', taken: true, label: 'TAÇAS · CRISTAL' },
-  { id: 4, name: 'Roupa de cama king', price: 'R$ 540', cat: 'Casa', taken: false, label: 'LENÇÓIS · LINHO' },
-  { id: 5, name: 'Jantar em Buenos Aires', price: 'R$ 380', cat: 'Lua de mel', taken: false, label: 'JANTAR · BA' },
-  { id: 6, name: 'Contribuição livre (Pix)', price: 'valor livre', cat: 'Pix', taken: false, label: 'PIX · CHAVE' },
-  { id: 7, name: 'Batedeira planetária', price: 'R$ 890', cat: 'Cozinha', taken: false, label: 'BATEDEIRA' },
-  { id: 8, name: 'Aromatizador de ambiente', price: 'R$ 180', cat: 'Casa', taken: true, label: 'DIFUSOR' },
-];
+export type { Gift };
 
 export function GiftsBand({
   heading = 'Agora escolha um presente',
   lede,
-  gifts = GIFTS,
+  gifts,
 }: {
   heading?: string;
   lede?: string;
@@ -39,8 +23,37 @@ export function GiftsBand({
 }) {
   const [cat, setCat] = useState<string>('Todos');
   const [open, setOpen] = useState(!GIFTS_REQUIRE_RSVP);
+  const [remote, setRemote] = useState<Gift[] | null>(gifts ?? null);
+
+  useEffect(() => {
+    if (gifts) {
+      setRemote(gifts);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('gifts')
+          .select(PUBLIC_GIFT_SELECT)
+          .order('display_order')
+          .order('title');
+        if (cancelled) return;
+        setRemote(error || !data ? [] : toPublicGifts(data as GiftRow[]));
+      } catch {
+        if (!cancelled) setRemote([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gifts]);
+  const catalog = remote ?? [];
   const knownIds = new Set<string>(GIFT_CATEGORIES.map((item) => item.id));
-  const legacyIds = Array.from(new Set(gifts.map((gift) => gift.cat))).filter(
+  const legacyIds = Array.from(new Set(catalog.map((gift) => gift.cat))).filter(
     (id) => id && !knownIds.has(id),
   );
   const categories = [
@@ -48,7 +61,7 @@ export function GiftsBand({
     ...GIFT_CATEGORIES.map((item) => ({ id: item.id, icon: item.icon as RusticName })),
     ...legacyIds.map((id) => ({ id, icon: 'gift' as RusticName })),
   ];
-  const list = cat === 'Todos' ? gifts : gifts.filter((gift) => gift.cat === cat);
+  const list = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
 
   useEffect(() => {
     const sync = () => setOpen(!GIFTS_REQUIRE_RSVP || hasConfirmedPresence());
@@ -99,12 +112,8 @@ export function GiftsBand({
       </div>
       <div style={{ position: 'relative', marginTop: 22 }}>
         <ul
+          className="gifts-grid"
           style={{
-            listStyle: 'none',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 16,
-            padding: 0,
             filter: open ? 'none' : 'blur(1.5px)',
           }}
         >
@@ -113,6 +122,11 @@ export function GiftsBand({
               <GiftCard gift={gift} />
             </li>
           ))}
+          {remote && list.length === 0 && (
+            <li className="italic" style={{ gridColumn: '1 / -1', color: 'var(--texto-suave)', padding: '12px 0' }}>
+              A lista ainda está sendo preparada.
+            </li>
+          )}
         </ul>
         {!open && (
           <div className="veil">
@@ -152,44 +166,33 @@ function GiftCard({ gift }: { gift: Gift }) {
         setTilt('none');
         setShift('scale(1.06)');
       }}
-      style={{ transform: tilt, padding: 14, opacity: gift.taken ? 0.72 : 1, position: 'relative' }}
+      style={{ transform: tilt, opacity: gift.taken ? 0.72 : 1, position: 'relative' }}
     >
-      <div className="arch ph" style={{ aspectRatio: '4 / 3', overflow: 'hidden' }}>
+      <div className="gift-card__media">
         {gift.imageUrl ? (
-          <img src={gift.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: shift }} />
+          <img src={gift.imageUrl} alt="" style={{ transform: shift }} />
         ) : (
           <div className="ph-label" style={{ transform: shift }}>{gift.label}</div>
         )}
       </div>
-      <div className="micro" style={{ marginTop: 12, color: 'var(--texto-suave)' }}>
+      <div className="micro gift-card__cat" style={{ color: 'var(--texto-suave)' }}>
         {gift.cat}
       </div>
-      <h3 className="serif" style={{ fontSize: 26, fontWeight: 400, color: 'var(--azul-profundo)', lineHeight: 1.1, marginTop: 4 }}>
+      <h3 className="serif gift-card__title">
         {gift.name}
       </h3>
-      <p className="italic" style={{ color: 'var(--dourado-esc)', marginTop: 4 }}>
+      <p className="italic gift-card__price">
         {gift.price}
       </p>
       {gift.taken ? (
-        <span
-          className="micro"
-          style={{
-            position: 'absolute',
-            top: 22,
-            right: 22,
-            background: 'var(--dourado)',
-            color: 'var(--azul-profundo)',
-            borderRadius: 999,
-            padding: '6px 10px',
-          }}
-        >
-          Reservado
+        <span className="micro gift-card__reserved">
+          Presenteado
         </span>
       ) : (
-        <button type="button" className="btn btn-primary btn-sm" style={{ marginTop: 12 }}>
+        <Link href={`/presentes/${gift.id}`} className="btn btn-primary btn-sm gift-card__cta">
           <RusticIcon name="gift" size={14} />
           Presentear
-        </button>
+        </Link>
       )}
     </article>
   );

@@ -47,6 +47,7 @@ async function createGift(formData: FormData) {
   });
   revalidatePath('/admin/presentes');
   revalidatePath('/presentes');
+  revalidatePath('/');
   revalidatePath('/admin/imagens');
 }
 
@@ -57,6 +58,8 @@ async function deleteGift(formData: FormData) {
   const supabase = await createClient();
   await supabase.from('gifts').delete().eq('id', id);
   revalidatePath('/admin/presentes');
+  revalidatePath('/presentes');
+  revalidatePath('/');
 }
 
 async function clearTakenBy(formData: FormData) {
@@ -64,8 +67,16 @@ async function clearTakenBy(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from('gifts').update({ taken_by_name: null, taken_at: null }).eq('id', id);
+  await supabase.from('gifts').update({
+    taken_by_name: null,
+    taken_at: null,
+    claim_method: null,
+    claim_address_id: null,
+    claim_address_text: null,
+  }).eq('id', id);
   revalidatePath('/admin/presentes');
+  revalidatePath('/presentes');
+  revalidatePath('/');
 }
 
 type Gift = {
@@ -79,6 +90,8 @@ type Gift = {
   card_enabled: boolean | null;
   display_order: number | null;
   taken_by_name: string | null;
+  claim_method: string | null;
+  claim_address_text: string | null;
 };
 
 type Image = { id: string; alt: string | null; storage_path: string; context: string };
@@ -88,7 +101,7 @@ export default async function PresentesPage() {
   const [{ data: gifts }, { data: images }] = await Promise.all([
     supabase
       .from('gifts')
-      .select('id, title, description, category, price_cents, image_id, pix_enabled, card_enabled, display_order, taken_by_name')
+      .select('id, title, description, category, price_cents, image_id, pix_enabled, card_enabled, display_order, taken_by_name, claim_method, claim_address_text')
       .order('display_order')
       .order('title'),
     supabase.from('images').select('id, alt, storage_path, context').order('alt'),
@@ -134,7 +147,7 @@ export default async function PresentesPage() {
       </div>
 
       <Card title="Adicionar presente">
-        <form action={createGift} encType="multipart/form-data" style={{ display: 'grid', gap: 14 }}>
+        <form action={createGift} style={{ display: 'grid', gap: 14 }}>
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <Field label="Título" name="title" required placeholder="Jogo de panelas de cobre" />
             <SelectField
@@ -230,7 +243,12 @@ export default async function PresentesPage() {
                       </span>
                       <Pill variant="gold">{g.category}</Pill>
                       {g.taken_by_name ? (
-                        <Pill variant="success">reservado · {g.taken_by_name}</Pill>
+                        <Pill variant="success">
+                          presenteado · {g.taken_by_name}
+                          {g.claim_method === 'pix' ? ' · PIX' : ''}
+                          {g.claim_method === 'in_hand' ? ' · nas mãos' : ''}
+                          {g.claim_method === 'address' ? ' · envio' : ''}
+                        </Pill>
                       ) : null}
                     </div>
                     {g.description && (

@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import {
+  Card,
   DateField,
   Field,
   PageHeader,
@@ -47,13 +48,45 @@ async function saveConfig(formData: FormData) {
   revalidatePath('/');
 }
 
+async function addAddress(formData: FormData) {
+  'use server';
+  const label = String(formData.get('label') ?? '').trim();
+  const addressLine = String(formData.get('address_line') ?? '').trim();
+  if (!label || !addressLine) return;
+  const recipient = String(formData.get('recipient') ?? '').trim();
+  const supabase = await createClient();
+  await supabase.from('gift_addresses').insert({
+    label,
+    recipient: recipient || null,
+    address_line: addressLine,
+    display_order: Number(formData.get('display_order') ?? 0) || 0,
+  });
+  revalidatePath('/admin/config');
+  revalidatePath('/presentes');
+}
+
+async function deleteAddress(formData: FormData) {
+  'use server';
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from('gift_addresses').delete().eq('id', id);
+  revalidatePath('/admin/config');
+  revalidatePath('/presentes');
+}
+
 type Cfg = { key: string; value: string | null };
+type Address = { id: string; label: string; recipient: string | null; address_line: string };
 
 export default async function ConfigPage() {
   const supabase = await createClient();
-  const { data } = await supabase.from('config').select('key, value');
+  const [{ data }, { data: addressRows }] = await Promise.all([
+    supabase.from('config').select('key, value'),
+    supabase.from('gift_addresses').select('id, label, recipient, address_line').order('display_order').order('label'),
+  ]);
   const map = new Map<string, string>();
   ((data ?? []) as Cfg[]).forEach((c) => map.set(c.key, c.value ?? ''));
+  const addresses = (addressRows ?? []) as Address[];
 
   const weddingDate = map.get('wedding_date') ?? '';
   const weddingDatePreview = weddingDate
@@ -145,6 +178,65 @@ export default async function ConfigPage() {
           <SubmitButton variant="gold">salvar alterações</SubmitButton>
         </div>
       </form>
+
+      <Card
+        title="Endereços para entrega"
+        subtitle="Quem for dar o item escolhe um destes endereços, ou entrega nas mãos."
+      >
+        <form action={addAddress} style={{ display: 'grid', gap: 14 }}>
+          <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            <Field label="Nome do endereço" name="label" required placeholder="Casa dos noivos" />
+            <Field label="Quem recebe" name="recipient" placeholder="Alicia e Fernando" />
+          </div>
+          <TextField
+            label="Endereço completo"
+            name="address_line"
+            rows={3}
+            placeholder="Rua, número, bairro, cidade, CEP"
+          />
+          <Field label="Ordem" name="display_order" type="number" defaultValue={0} />
+          <div>
+            <SubmitButton variant="gold">adicionar endereço</SubmitButton>
+          </div>
+        </form>
+        <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+          {addresses.length === 0 ? (
+            <div className="italic" style={{ color: 'rgba(239,231,219,.5)', fontSize: 14 }}>
+              Nenhum endereço ainda.
+            </div>
+          ) : (
+            addresses.map((address) => (
+              <div
+                key={address.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  alignItems: 'center',
+                  padding: '12px 0',
+                  borderTop: '1px solid rgba(239,231,219,.1)',
+                }}
+              >
+                <div>
+                  <div>{address.label}</div>
+                  {address.recipient ? (
+                    <div style={{ fontSize: 13, color: 'rgba(239,231,219,.6)' }}>{address.recipient}</div>
+                  ) : null}
+                  <div style={{ fontSize: 13, color: 'rgba(239,231,219,.6)', whiteSpace: 'pre-line' }}>
+                    {address.address_line}
+                  </div>
+                </div>
+                <form action={deleteAddress}>
+                  <input type="hidden" name="id" value={address.id} />
+                  <SubmitButton variant="danger" small>
+                    ✕
+                  </SubmitButton>
+                </form>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

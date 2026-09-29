@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Hero } from '@/components/home/Hero';
-import { StoryBand } from '@/components/home/StoryBand';
+import { NossaHistoria } from '@/components/NossaHistoria';
 import { BigDay } from '@/components/home/BigDay';
 import { RsvpForm } from '@/components/home/RsvpForm';
 import { GiftsBand } from '@/components/home/GiftsBand';
@@ -72,7 +72,7 @@ export default function HomePage() {
       <HomeMotion />
       <Hero name1={name1} name2={name2} subtitle={config.heroSubtitle} whenLine={whenLine} target={weddingTimestamp} />
       <BotanicalRule />
-      <StoryBand />
+      <NossaHistoria />
       <Bleed />
       <BigDay />
       <BotanicalRule />

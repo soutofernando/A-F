@@ -1,0 +1,268 @@
+.nh {
+  --nh-paper: #f8f4ec;
+  --nh-blue: #244a75;
+  --nh-gold: #c49a45;
+  --nh-leaf: #8a9a78;
+
+  background: var(--nh-paper);
+  color: var(--nh-blue);
+  padding: 5.5rem 1.75rem 6.5rem;
+}
+
+.nh-inner {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.nh-title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4.25rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  color: var(--nh-blue);
+}
+
+.nh-rule {
+  width: 4.5rem;
+  height: 1px;
+  margin: 1.15rem auto 0;
+  background: var(--nh-leaf);
+}
+
+.nh-track {
+  position: relative;
+  margin-top: 3.4rem;
+}
+
+.nh-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--nh-gold) 32%, transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nh-line-fill {
+  width: 100%;
+  height: 100%;
+  background: var(--nh-gold);
+  transform-origin: top center;
+  transform: scaleY(1);
+}
+
+.nh-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.nh-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.75rem minmax(0, 1fr);
+  column-gap: 1.35rem;
+  align-items: center;
+}
+
+.nh-media {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.nh-marker {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  align-self: center;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--nh-gold);
+  box-shadow: 0 0 0 0.45rem var(--nh-paper);
+  position: relative;
+  z-index: 2;
+}
+
+.nh-copy {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+  max-width: 28rem;
+  min-width: 0;
+}
+
+.nh-item:nth-child(even) .nh-media {
+  grid-column: 3;
+  justify-content: flex-start;
+}
+
+.nh-item:nth-child(even) .nh-copy {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+}
+
+.nh-arch {
+  position: relative;
+  width: min(100%, 17.5rem);
+}
+
+.nh-item:last-child .nh-arch {
+  width: min(100%, 22rem);
+}
+
+.nh-frame {
+  position: relative;
+  z-index: 1;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: transparent;
+}
+
+.nh-item:last-child .nh-frame {
+  box-shadow: inset 0 0 0 1px var(--nh-gold);
+}
+
+.nh-arch::after,
+.nh-item:last-child .nh-arch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--nh-gold);
+  border-radius: 1.25rem;
+  pointer-events: none;
+}
+
+.nh-arch::after {
+  transform: translate(0.7rem, 0.7rem);
+}
+
+.nh-item:last-child .nh-arch::before {
+  transform: translate(1.2rem, 1.2rem);
+}
+
+.nh-zoom {
+  position: relative;
+  transform-origin: center center;
+}
+
+.nh-fit {
+  position: relative;
+}
+
+.nh-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  flex: none;
+  object-fit: contain;
+  object-position: center;
+}
+
+.nh-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(113, 148, 184, 0.16) 0 10px,
+      rgba(198, 161, 91, 0.08) 10px 20px
+    ),
+    linear-gradient(180deg, var(--ceu-claro) 0%, var(--bg-alt) 100%);
+}
+
+.nh-date {
+  display: block;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--nh-gold);
+}
+
+.nh-heading {
+  margin: 0.3rem 0 0;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: var(--nh-blue);
+}
+
+.nh-text {
+  margin: 0.8rem 0 0;
+  font-family: var(--font-inter), 'Inter', sans-serif;
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--nh-blue);
+}
+
+@media (max-width: 760px) {
+  .nh {
+    padding: 4.25rem 1.5rem 4.75rem;
+  }
+
+  .nh-line {
+    left: 1.375rem;
+  }
+
+  .nh-list {
+    gap: 3.25rem;
+  }
+
+  .nh-item,
+  .nh-item:nth-child(even) {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    column-gap: 1rem;
+    row-gap: 0.95rem;
+  }
+
+  .nh-item .nh-media,
+  .nh-item:nth-child(even) .nh-media {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-start;
+  }
+
+  .nh-item .nh-copy,
+  .nh-item:nth-child(even) .nh-copy {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    text-align: left;
+    max-width: 36rem;
+  }
+
+  .nh-item .nh-marker {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .nh-arch,
+  .nh-item:last-child .nh-arch {
+    width: min(100%, 16.5rem);
+  }
+
+  .nh-item:last-child .nh-arch {
+    width: min(100%, 19rem);
+  }
+}

@@ -43,6 +43,7 @@ async function updateGift(formData: FormData) {
     .eq('id', id);
   revalidatePath('/admin/presentes');
   revalidatePath('/presentes');
+  revalidatePath('/');
   revalidatePath('/admin/imagens');
   redirect('/admin/presentes');
 }
@@ -83,7 +84,7 @@ export default async function EditGiftPage({ params }: { params: Promise<{ id: s
       <PageHeader kicker="EDITAR PRESENTE" title={gift.title} />
 
       <Card>
-        <form action={updateGift} encType="multipart/form-data" style={{ display: 'grid', gap: 16 }}>
+        <form action={updateGift} style={{ display: 'grid', gap: 16 }}>
           <input type="hidden" name="id" value={gift.id} />
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(2, 1fr)' }}>
             <Field label="Título" name="title" defaultValue={gift.title} required />
