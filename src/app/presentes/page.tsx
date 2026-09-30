@@ -1,5 +1,5 @@
 import { GiftsBand } from '@/components/home/GiftsBand';
-import { PUBLIC_GIFT_SELECT, toPublicGifts, type Gift, type GiftRow } from '@/lib/gifts';
+import { GIFTS_PER_PAGE, PUBLIC_GIFT_SELECT, toPublicGifts, type Gift, type GiftRow } from '@/lib/gifts';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,7 @@ export default async function PresentesPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 72 }}>
       <GiftsBand
         gifts={gifts}
+        pageSize={GIFTS_PER_PAGE}
         heading="lista de presentes"
         lede="sua presença já é, de longe, o melhor presente — mas se quiser nos ajudar a começar, deixamos alguns desejos por aqui."
       />

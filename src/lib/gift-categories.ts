@@ -2,7 +2,6 @@
 export const GIFT_CATEGORIES = [
   { id: 'Casa', icon: 'home' },
   { id: 'Cozinha', icon: 'pan' },
-  { id: 'Lua de mel', icon: 'moon' },
   { id: 'Pix', icon: 'seal' },
 ] as const;
 

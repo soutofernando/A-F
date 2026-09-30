@@ -326,6 +326,12 @@ img, canvas, video {
   gap: 8px;
   padding: 0;
   margin: 0;
+  align-items: stretch;
+}
+
+.gifts-grid > li {
+  display: flex;
+  min-width: 0;
 }
 
 @media (min-width: 720px) {
@@ -335,7 +341,90 @@ img, canvas, video {
   }
 }
 
+.gifts-pagination {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.gifts-pagination__meta {
+  margin: 0;
+  color: var(--texto-suave);
+  letter-spacing: .12em;
+}
+
+.gifts-pagination__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+}
+
+.gifts-pagination__btn {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--linha);
+  background: transparent;
+  color: var(--texto);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.gifts-pagination__btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.gifts-pagination__pages {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.gifts-pagination__page-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gifts-pagination__gap {
+  color: var(--texto-suave);
+  padding: 0 2px;
+  user-select: none;
+}
+
+.gifts-pagination__num {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--linha);
+  background: transparent;
+  color: var(--texto);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.gifts-pagination__num.is-active {
+  background: var(--azul-profundo);
+  border-color: var(--azul-profundo);
+  color: #fff;
+}
+
 .gift-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   background: var(--surface);
   border: 1px solid var(--linha);
   border-radius: 22px;
@@ -583,8 +672,14 @@ img, canvas, video {
   font-size: clamp(11px, 3.1vw, 26px);
   font-weight: 400;
   color: var(--azul-profundo);
-  line-height: 1.1;
+  line-height: 1.15;
   margin-top: 2px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  min-height: calc(3 * 1.15em);
 }
 
 .gift-card__price {
@@ -607,7 +702,7 @@ img, canvas, video {
 }
 
 .gift-card__cta {
-  margin-top: 6px;
+  margin-top: auto;
   width: 100%;
   justify-content: center;
   padding: 6px 4px;
@@ -645,7 +740,7 @@ img, canvas, video {
   }
 
   .gift-card__cta {
-    margin-top: 12px;
+    margin-top: auto;
     width: auto;
     justify-content: flex-start;
     padding: 12px 18px;

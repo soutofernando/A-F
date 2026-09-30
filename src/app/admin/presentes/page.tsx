@@ -132,6 +132,12 @@ export default async function PresentesPage() {
         subtitle={`Categorias visíveis no site público: ${GIFT_CATEGORIES_PUBLIC_LABEL}.`}
       />
 
+      <p style={{ margin: '0 0 24px', fontSize: 13 }}>
+        <Link href="/admin/presentes/import" className="admin-btn" style={{ color: 'var(--gold-soft)', textDecoration: 'none' }}>
+          importar vários de uma vez (planilha / CSV) →
+        </Link>
+      </p>
+
       <div
         className="admin-stagger"
         style={{

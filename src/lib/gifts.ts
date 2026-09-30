@@ -1,3 +1,9 @@
+/** Items per page on the home gifts section. */
+export const GIFTS_PER_PAGE_HOME = 9;
+
+/** Items per page on /presentes. */
+export const GIFTS_PER_PAGE = 12;
+
 export type Gift = {
   id: string | number;
   name: string;
