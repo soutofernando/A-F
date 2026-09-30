@@ -8,6 +8,7 @@ import {
   syncMercadoPagoPayment,
   type PaymentNotice,
 } from '@/lib/mercadopago';
+import { cardChargeCentsFromGift, cardCheckoutFeeNote, formatBrlFromCents, maxCardInstallments } from '@/lib/card-fee';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -114,6 +115,10 @@ export default async function GiftDetailPage({
     row.price_cents != null &&
     row.price_cents > 0 &&
     cardCheckoutConfigured();
+  const cardChargeLabel =
+    cardEnabled && row.price_cents != null
+      ? formatBrlFromCents(cardChargeCentsFromGift(row.price_cents))
+      : null;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 88 }}>
@@ -123,6 +128,9 @@ export default async function GiftDetailPage({
           title: row.title,
           category: row.category,
           priceLabel: formatPrice(row.price_cents),
+          cardChargeLabel,
+          cardFeeNote: cardCheckoutFeeNote(),
+          cardMaxInstallments: maxCardInstallments(),
           imageUrl: image?.storage_path ? `${baseUrl}/storage/v1/object/public/photos/${image.storage_path}` : null,
           pixEnabled: Boolean(row.pix_enabled),
           cardEnabled,

@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { cardChargeCentsFromGift, maxCardInstallments } from '@/lib/card-fee';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const HOLD_MS = 5 * 60 * 1000;
@@ -93,9 +94,20 @@ export async function startCardCheckout(input: {
   }
 
   const admin = createAdminClient();
+  const { data: giftRow, error: giftError } = await admin
+    .from('gifts')
+    .select('price_cents')
+    .eq('id', input.giftId)
+    .maybeSingle();
+  if (giftError || giftRow?.price_cents == null || giftRow.price_cents <= 0) {
+    return { ok: false, message: 'Este presente não tem um valor fechado para o cartão.' };
+  }
+
+  const chargeCents = cardChargeCentsFromGift(giftRow.price_cents);
   const { data, error } = await admin.rpc('reserve_gift_card', {
     p_gift_id: input.giftId,
     p_giver_name: giverName,
+    p_charge_cents: chargeCents,
   });
 
   const reserved = (Array.isArray(data) ? data[0] : data) as {
@@ -140,7 +152,8 @@ export async function startCardCheckout(input: {
     notification_url: `${origin}/api/mercadopago/webhook`,
     statement_descriptor: 'CASAMENTO',
     payment_methods: {
-      installments: 12,
+      installments: maxCardInstallments(),
+      default_installments: 1,
       excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }, { id: 'bank_transfer' }],
     },
     expires: true,

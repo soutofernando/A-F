@@ -12,12 +12,47 @@ export type GiftAddress = {
   line: string;
 };
 
+const IconPix = () => (
+  <svg className="gift-choice__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M13.2 2.4 20.4 9.6a3.6 3.6 0 0 1 0 5.1l-5.1 5.1a3.6 3.6 0 0 1-5.1 0L3 9.6a3.6 3.6 0 0 1 0-5.1l5.1-5.1a3.6 3.6 0 0 1 5.1 0Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <path d="M8.4 8.4h7.2M8.4 12h7.2M8.4 15.6h4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconCard = () => (
+  <svg className="gift-choice__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M2.5 10h19" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M6.5 15.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconGift = () => (
+  <svg className="gift-choice__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path d="M4 10.5h16v9.5H4V10.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    <path d="M12 10.5v9.5M4 14h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path
+      d="M12 10.5c-2.2 0-4-1.2-4-3.2S9.8 4 12 4s4 1.3 4 3.3-1.8 3.2-4 3.2Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <path d="M4 10.5h16V8.5H4v2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+  </svg>
+);
+
 type Props = {
   gift: {
     id: string;
     title: string;
     category: string;
     priceLabel: string;
+    cardChargeLabel: string | null;
+    cardFeeNote: string | null;
+    cardMaxInstallments: number;
     imageUrl: string | null;
     pixEnabled: boolean;
     cardEnabled: boolean;
@@ -234,8 +269,11 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             className={mode === 'pix' ? 'gift-choice is-on' : 'gift-choice'}
             onClick={() => setMode('pix')}
           >
-            <strong>Enviar o valor no PIX</strong>
-            <span>Copia e cola ou QR Code, no valor deste presente.</span>
+            <IconPix />
+            <span className="gift-choice__body">
+              <strong>Enviar o valor no PIX</strong>
+              <span>Copia e cola ou QR Code, no valor deste presente.</span>
+            </span>
           </button>
         ) : null}
         {gift.cardEnabled ? (
@@ -246,8 +284,15 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             className={mode === 'card' ? 'gift-choice is-on' : 'gift-choice'}
             onClick={() => setMode('card')}
           >
-            <strong>Pagar no cartão</strong>
-            <span>À vista ou parcelado, na página do Mercado Pago.</span>
+            <IconCard />
+            <span className="gift-choice__body">
+              <strong>Pagar no cartão</strong>
+              <span>
+                {gift.cardChargeLabel
+                  ? `Total no cartão ${gift.cardChargeLabel} (até ${gift.cardMaxInstallments}x no Mercado Pago).`
+                  : `Até ${gift.cardMaxInstallments}x na página do Mercado Pago.`}
+              </span>
+            </span>
           </button>
         ) : null}
         <button
@@ -257,8 +302,11 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
           className={mode === 'item' ? 'gift-choice is-on' : 'gift-choice'}
           onClick={() => setMode('item')}
         >
-          <strong>Entregar o presente</strong>
-          <span>Envie para um endereço cadastrado ou entregue nas mãos.</span>
+          <IconGift />
+          <span className="gift-choice__body">
+            <strong>Entregar o presente</strong>
+            <span>Envie para um endereço cadastrado ou entregue nas mãos.</span>
+          </span>
         </button>
       </div>
 
@@ -295,10 +343,11 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
       {mode === 'card' && gift.cardEnabled ? (
         <section className="gift-claim__panel">
           <p className="gift-claim__meta">
-            {gift.priceLabel}
+            {gift.cardChargeLabel ?? gift.priceLabel}
             {' · '}
-            o parcelamento aparece no Mercado Pago, no cartão de crédito.
+            presente {gift.priceLabel}
           </p>
+          {gift.cardFeeNote ? <p className="gift-claim__hint">{gift.cardFeeNote}</p> : null}
           <button type="button" className="btn btn-primary" disabled={pending} onClick={payWithCard}>
             {pending ? 'Abrindo pagamento' : 'Ir para o pagamento'}
           </button>

@@ -622,6 +622,26 @@ img, canvas, video {
   cursor: pointer;
 }
 
+.gift-choice {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  column-gap: 14px;
+}
+
+.gift-choice__icon {
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+  color: var(--azul-profundo);
+  flex-shrink: 0;
+}
+
+.gift-choice__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
 .gift-address {
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -636,7 +656,7 @@ img, canvas, video {
   font-weight: 400;
 }
 
-.gift-choice span,
+.gift-choice__body > span,
 .gift-address span span {
   display: block;
   color: var(--texto-suave);
