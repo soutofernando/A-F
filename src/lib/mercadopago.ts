@@ -126,7 +126,10 @@ export async function startCardCheckout(input: {
     if (raw.includes('disabled')) {
       return { ok: false, message: 'Este presente não aceita cartão.' };
     }
-    if (raw.includes('name')) {
+    if (raw.includes('invalid charge')) {
+      return { ok: false, message: 'Não foi possível calcular o valor do cartão. Tente de novo ou avise os noivos.' };
+    }
+    if (raw.includes('invalid name')) {
       return { ok: false, message: 'Escreva o nome de quem está dando o presente.' };
     }
     return { ok: false, message: 'Não foi possível abrir o pagamento. Tente de novo.' };
