@@ -11,6 +11,7 @@ import {
   type Gift,
   type GiftRow,
 } from '@/lib/gifts';
+import { matchesSearch } from '@/lib/search-text';
 import { GIFTS_REQUIRE_RSVP } from '@/lib/site';
 import { hasConfirmedPresence } from '@/lib/rsvp-storage';
 import { createClient } from '@/lib/supabase/client';
@@ -33,6 +34,7 @@ export function GiftsBand({
   pageSize?: number;
 }) {
   const [cat, setCat] = useState<string>('Todos');
+  const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(!GIFTS_REQUIRE_RSVP);
   const [remote, setRemote] = useState<Gift[] | null>(gifts ?? null);
@@ -74,7 +76,8 @@ export function GiftsBand({
     ...legacyIds.map((id) => ({ id, icon: 'gift' as RusticName })),
   ];
   const isPixTab = cat === 'Pix';
-  const list = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
+  const byCategory = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
+  const list = byCategory.filter((gift) => matchesSearch(query, gift.name));
 
   const perPage = Math.max(1, pageSize);
   const totalPages = Math.max(1, Math.ceil(list.length / perPage));
@@ -87,7 +90,7 @@ export function GiftsBand({
 
   useEffect(() => {
     setPage(1);
-  }, [cat]);
+  }, [cat, query]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -143,6 +146,21 @@ export function GiftsBand({
           </button>
         ))}
       </div>
+      {!isPixTab && (
+        <label className="gifts-search" style={{ display: 'block', marginTop: 18, maxWidth: 420 }}>
+          <span className="micro" style={{ display: 'block', marginBottom: 8, color: 'var(--texto-suave)' }}>
+            Buscar presente
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Digite o nome do produto…"
+            className="gifts-search__input"
+            aria-label="Buscar presente por nome"
+          />
+        </label>
+      )}
       <div style={{ position: 'relative', marginTop: 22 }}>
         {isPixTab ? (
           <div style={{ filter: open ? 'none' : 'blur(1.5px)' }}>
@@ -156,9 +174,16 @@ export function GiftsBand({
                   <GiftCard gift={gift} />
                 </li>
               ))}
-              {remote && list.length === 0 && (
+              {remote && catalog.length === 0 && (
                 <li className="italic" style={{ gridColumn: '1 / -1', color: 'var(--texto-suave)', padding: '12px 0' }}>
                   A lista ainda está sendo preparada.
+                </li>
+              )}
+              {remote && catalog.length > 0 && list.length === 0 && (
+                <li className="italic" style={{ gridColumn: '1 / -1', color: 'var(--texto-suave)', padding: '12px 0' }}>
+                  {query.trim()
+                    ? `Nenhum presente encontrado para “${query.trim()}”.`
+                    : 'Nenhum presente nesta categoria.'}
                 </li>
               )}
             </ul>
@@ -301,7 +326,7 @@ function GiftCard({ gift }: { gift: Gift }) {
       </p>
       {gift.taken ? (
         <span className="micro gift-card__reserved">
-          Presenteado
+          {gift.reserved ? 'Reservado' : 'Presenteado'}
         </span>
       ) : (
         <Link href={`/presentes/${gift.id}`} className="btn btn-primary btn-sm gift-card__cta">

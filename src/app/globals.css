@@ -319,6 +319,28 @@ img, canvas, video {
 }
 .roll-strip span { height: 1em; display: block; }
 
+.gifts-search__input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--linha);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--texto);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gifts-search__input::placeholder {
+  color: var(--texto-suave);
+}
+
+.gifts-search__input:focus {
+  border-color: var(--azul-profundo);
+  box-shadow: 0 0 0 2px rgba(26, 58, 92, 0.12);
+}
+
 .gifts-grid {
   list-style: none;
   display: grid;

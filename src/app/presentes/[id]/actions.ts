@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { startCardCheckout as openCardCheckout } from '@/lib/mercadopago';
 import { createClient } from '@/lib/supabase/server';
 
 export type ClaimMethod = 'pix' | 'address' | 'in_hand';
@@ -43,4 +44,8 @@ export async function claimGift(input: {
   revalidatePath('/');
   revalidatePath('/admin/presentes');
   return { ok: true };
+}
+
+export async function startCardCheckout(input: { giftId: string; giverName: string }) {
+  return openCardCheckout(input);
 }

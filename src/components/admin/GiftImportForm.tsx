@@ -118,7 +118,7 @@ export function GiftImportForm() {
                 defaultChecked
               />
               <Checkbox label="Aceita PIX" name="pix_enabled" defaultChecked />
-              <Checkbox label="Aceita cartão" name="card_enabled" />
+              <Checkbox label="Aceita cartão" name="card_enabled" defaultChecked />
             </div>
 
             <p className="italic" style={{ fontSize: 12, color: 'rgba(239,231,219,.45)', margin: 0, lineHeight: 1.5 }}>

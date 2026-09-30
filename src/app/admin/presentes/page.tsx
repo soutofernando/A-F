@@ -7,12 +7,12 @@ import {
   Field,
   FileField,
   PageHeader,
-  Pill,
   SelectField,
   Stat,
   SubmitButton,
   TextField,
 } from '@/components/admin/ui';
+import { AdminGiftsList } from '@/components/admin/AdminGiftsList';
 import { resolveGiftImageIdFromForm } from '@/lib/admin/upload-presentes-image';
 import { GIFT_CATEGORIES_PUBLIC_LABEL, GIFT_CATEGORY_IDS } from '@/lib/gift-categories';
 
@@ -73,7 +73,9 @@ async function clearTakenBy(formData: FormData) {
     claim_method: null,
     claim_address_id: null,
     claim_address_text: null,
+    card_hold_until: null,
   }).eq('id', id);
+  await supabase.from('gift_payments').update({ status: 'cancelled' }).eq('gift_id', id).eq('status', 'pending');
   revalidatePath('/admin/presentes');
   revalidatePath('/presentes');
   revalidatePath('/');
@@ -192,7 +194,7 @@ export default async function PresentesPage() {
 
           <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
             <Checkbox label="Aceita PIX" name="pix_enabled" defaultChecked />
-            <Checkbox label="Aceita cartão" name="card_enabled" />
+            <Checkbox label="Aceita cartão" name="card_enabled" defaultChecked />
           </div>
 
           <div>
@@ -202,125 +204,26 @@ export default async function PresentesPage() {
       </Card>
 
       <Card title={`Cadastrados (${list.length})`}>
-        {list.length === 0 ? (
-          <div className="italic" style={{ color: 'rgba(239,231,219,.5)', fontSize: 14, padding: '20px 0' }}>
-            Nenhum presente ainda — adicione o primeiro acima.
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {list.map((g) => {
-              const img = g.image_id ? imgById.get(g.image_id) : null;
-              const imgUrl = img ? `${baseUrl}/storage/v1/object/public/photos/${img.storage_path}` : null;
-              return (
-                <div
-                  key={g.id}
-                  className="admin-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '64px 1fr auto auto',
-                    gap: 16,
-                    alignItems: 'center',
-                    padding: '12px 14px',
-                    border: '1px solid rgba(239,231,219,.1)',
-                    background: '#0E0B09',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 64,
-                      height: 64,
-                      background: imgUrl ? `url(${imgUrl}) center/cover` : '#141110',
-                      border: '1px solid rgba(239,231,219,.08)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 9,
-                      color: 'rgba(239,231,219,.3)',
-                      letterSpacing: '.15em',
-                    }}
-                  >
-                    {!imgUrl && 'SEM IMG'}
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <span className="serif" style={{ fontSize: 17, fontWeight: 400 }}>
-                        {g.title}
-                      </span>
-                      <Pill variant="gold">{g.category}</Pill>
-                      {g.taken_by_name ? (
-                        <Pill variant="success">
-                          presenteado · {g.taken_by_name}
-                          {g.claim_method === 'pix' ? ' · PIX' : ''}
-                          {g.claim_method === 'in_hand' ? ' · nas mãos' : ''}
-                          {g.claim_method === 'address' ? ' · envio' : ''}
-                        </Pill>
-                      ) : null}
-                    </div>
-                    {g.description && (
-                      <div
-                        className="italic"
-                        style={{
-                          fontSize: 12,
-                          color: 'rgba(239,231,219,.5)',
-                          marginTop: 4,
-                          lineHeight: 1.45,
-                        }}
-                      >
-                        {g.description.length > 90 ? `${g.description.slice(0, 90)}…` : g.description}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 11, color: 'rgba(239,231,219,.45)', marginTop: 6, letterSpacing: '.1em' }}>
-                      {g.pix_enabled && 'PIX'}
-                      {g.pix_enabled && g.card_enabled && ' · '}
-                      {g.card_enabled && 'CARTÃO'}
-                      {!g.pix_enabled && !g.card_enabled && 'sem pagamento'}
-                    </div>
-                  </div>
-
-                  <div
-                    className="serif"
-                    style={{ fontSize: 18, fontWeight: 400, color: 'var(--gold-soft)', whiteSpace: 'nowrap' }}
-                  >
-                    {formatBRL(g.price_cents)}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', whiteSpace: 'nowrap' }}>
-                    {g.taken_by_name && (
-                      <form action={clearTakenBy} style={{ display: 'inline' }}>
-                        <input type="hidden" name="id" value={g.id} />
-                        <SubmitButton variant="outline" small>
-                          liberar
-                        </SubmitButton>
-                      </form>
-                    )}
-                    <Link
-                      href={`/admin/presentes/${g.id}`}
-                      className="admin-btn"
-                      style={{
-                        color: 'var(--gold-soft)',
-                        fontSize: 10,
-                        letterSpacing: '.22em',
-                        textTransform: 'uppercase',
-                        textDecoration: 'none',
-                        padding: '6px 14px',
-                        border: '1px solid rgba(212,175,122,.4)',
-                      }}
-                    >
-                      editar
-                    </Link>
-                    <form action={deleteGift} style={{ display: 'inline' }}>
-                      <input type="hidden" name="id" value={g.id} />
-                      <SubmitButton variant="danger" small>
-                        ✕
-                      </SubmitButton>
-                    </form>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <AdminGiftsList
+          items={list.map((g) => {
+            const img = g.image_id ? imgById.get(g.image_id) : null;
+            const imgUrl = img ? `${baseUrl}/storage/v1/object/public/photos/${img.storage_path}` : null;
+            return {
+              id: g.id,
+              title: g.title,
+              description: g.description,
+              category: g.category,
+              priceLabel: formatBRL(g.price_cents),
+              imgUrl,
+              taken_by_name: g.taken_by_name,
+              claim_method: g.claim_method,
+              pix_enabled: g.pix_enabled,
+              card_enabled: g.card_enabled,
+            };
+          })}
+          deleteGift={deleteGift}
+          clearTakenBy={clearTakenBy}
+        />
       </Card>
     </div>
   );

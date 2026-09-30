@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { claimGift, type ClaimMethod } from '@/app/presentes/[id]/actions';
+import { claimGift, startCardCheckout, type ClaimMethod } from '@/app/presentes/[id]/actions';
 
 export type GiftAddress = {
   id: string;
@@ -20,7 +20,10 @@ type Props = {
     priceLabel: string;
     imageUrl: string | null;
     pixEnabled: boolean;
+    cardEnabled: boolean;
     taken: boolean;
+    held: boolean;
+    takenName: string | null;
   };
   pix: {
     bank: string;
@@ -29,6 +32,7 @@ type Props = {
     qrDataUrl: string | null;
   } | null;
   addresses: GiftAddress[];
+  paymentNotice?: 'approved' | 'pending' | 'failure' | 'conflict' | null;
 };
 
 const copyWithSelection = (value: string) => {
@@ -52,16 +56,20 @@ const copyText = async (value: string) => {
   await navigator.clipboard.writeText(value);
 };
 
-export function GiftClaim({ gift, pix, addresses }: Props) {
+export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props) {
   const titleId = useId();
   const nameRef = useRef<HTMLInputElement>(null);
   const [giverName, setGiverName] = useState('');
-  const [mode, setMode] = useState<'pix' | 'item' | null>(gift.pixEnabled ? null : 'item');
+  const [mode, setMode] = useState<'pix' | 'card' | 'item' | null>(
+    gift.pixEnabled || gift.cardEnabled ? null : 'item',
+  );
   const [delivery, setDelivery] = useState<string>(addresses[0]?.id ?? 'in_hand');
   const [copied, setCopied] = useState<string | null>(null);
   const [modal, setModal] = useState<ClaimMethod | null>(null);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(
+    paymentNotice === 'failure' ? 'O pagamento não foi concluído. O presente continua na lista.' : '',
+  );
   const [done, setDone] = useState(false);
 
   const nameOk = giverName.trim().length >= 2;
@@ -119,6 +127,20 @@ export function GiftClaim({ gift, pix, addresses }: Props) {
     setDone(true);
   };
 
+  if (paymentNotice === 'conflict') {
+    return (
+      <div className="gift-claim">
+        <Link href="/presentes" className="gift-claim__back">
+          Voltar para a lista
+        </Link>
+        <h1 className="serif gift-claim__title">{gift.title}</h1>
+        <p className="italic gift-claim__lede">
+          O pagamento foi aprovado, mas este presente já estava com outra pessoa. Fale com os noivos.
+        </p>
+      </div>
+    );
+  }
+
   if (gift.taken || done) {
     return (
       <div className="gift-claim">
@@ -129,11 +151,45 @@ export function GiftClaim({ gift, pix, addresses }: Props) {
         <p className="italic gift-claim__lede">
           {done
             ? `${giverName.trim()}, este presente ficou registrado no seu nome.`
-            : 'Este presente já foi escolhido.'}
+            : gift.takenName
+              ? `Este presente ficou com ${gift.takenName}.`
+              : 'Este presente já foi escolhido.'}
         </p>
       </div>
     );
   }
+
+  if (gift.held || paymentNotice === 'pending') {
+    return (
+      <div className="gift-claim">
+        <Link href="/presentes" className="gift-claim__back">
+          Voltar para a lista
+        </Link>
+        <h1 className="serif gift-claim__title">{gift.title}</h1>
+        <p className="italic gift-claim__lede">
+          Este presente está reservado enquanto o Mercado Pago confirma o pagamento.
+        </p>
+      </div>
+    );
+  }
+
+  const payWithCard = async () => {
+    if (!nameOk) {
+      setError('Escreva o nome de quem está dando o presente.');
+      nameRef.current?.focus();
+      nameRef.current?.scrollIntoView({ block: 'center' });
+      return;
+    }
+    setPending(true);
+    setError('');
+    const result = await startCardCheckout({ giftId: gift.id, giverName });
+    if (!result.ok) {
+      setPending(false);
+      setError(result.message);
+      return;
+    }
+    window.location.assign(result.url);
+  };
 
   const confirmLabel =
     modal === 'pix'
@@ -182,6 +238,18 @@ export function GiftClaim({ gift, pix, addresses }: Props) {
             <span>Copia e cola ou QR Code, no valor deste presente.</span>
           </button>
         ) : null}
+        {gift.cardEnabled ? (
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'card'}
+            className={mode === 'card' ? 'gift-choice is-on' : 'gift-choice'}
+            onClick={() => setMode('card')}
+          >
+            <strong>Pagar no cartão</strong>
+            <span>À vista ou parcelado, na página do Mercado Pago.</span>
+          </button>
+        ) : null}
         <button
           type="button"
           role="radio"
@@ -221,6 +289,19 @@ export function GiftClaim({ gift, pix, addresses }: Props) {
               A chave PIX ainda não foi cadastrada. Dá para entregar o presente, ou pedir o código aos noivos.
             </p>
           )}
+        </section>
+      ) : null}
+
+      {mode === 'card' && gift.cardEnabled ? (
+        <section className="gift-claim__panel">
+          <p className="gift-claim__meta">
+            {gift.priceLabel}
+            {' · '}
+            o parcelamento aparece no Mercado Pago, no cartão de crédito.
+          </p>
+          <button type="button" className="btn btn-primary" disabled={pending} onClick={payWithCard}>
+            {pending ? 'Abrindo pagamento' : 'Ir para o pagamento'}
+          </button>
         </section>
       ) : null}
 

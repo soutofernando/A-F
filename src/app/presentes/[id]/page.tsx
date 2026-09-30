@@ -2,6 +2,12 @@ import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
 import { GiftClaim } from '@/components/home/GiftClaim';
 import { buildPixPayload } from '@/lib/pix-brcode';
+import {
+  cardCheckoutConfigured,
+  releaseCardCheckout,
+  syncMercadoPagoPayment,
+  type PaymentNotice,
+} from '@/lib/mercadopago';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +19,9 @@ type GiftRow = {
   category: string;
   price_cents: number | null;
   pix_enabled: boolean | null;
+  card_enabled: boolean | null;
   taken_by_name: string | null;
+  card_hold_until: string | null;
   images: { storage_path: string; alt: string | null } | { storage_path: string; alt: string | null }[] | null;
 };
 
@@ -34,13 +42,34 @@ const imageOf = (images: GiftRow['images']) => {
   return Array.isArray(images) ? images[0] ?? null : images;
 };
 
-export default async function GiftDetailPage({ params }: { params: Promise<{ id: string }> }) {
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? '';
+
+export default async function GiftDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
+  const paymentId = one(query.payment_id) || one(query.collection_id);
+  const status = one(query.status) || one(query.collection_status);
+  const externalReference = one(query.external_reference);
+
+  let paymentNotice: PaymentNotice | null = null;
+  if (/^\d+$/.test(paymentId)) {
+    paymentNotice = await syncMercadoPagoPayment(paymentId, id);
+  } else if (/^[0-9a-f-]{36}$/i.test(externalReference) && (status === 'failure' || status === 'rejected')) {
+    await releaseCardCheckout(externalReference, id);
+    paymentNotice = 'failure';
+  }
+
   const supabase = await createClient();
   const [{ data: gift }, { data: config }, { data: addresses }] = await Promise.all([
     supabase
       .from('gifts')
-      .select('id, title, description, category, price_cents, pix_enabled, taken_by_name, images(storage_path, alt)')
+      .select('id, title, description, category, price_cents, pix_enabled, card_enabled, taken_by_name, card_hold_until, images(storage_path, alt)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('config').select('key, value').in('key', ['pix_key', 'pix_bank', 'pix_holder']),
@@ -74,6 +103,13 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ id:
       })
     : null;
 
+  const held = Boolean(row.card_hold_until && new Date(row.card_hold_until).getTime() > Date.now());
+  const cardEnabled =
+    Boolean(row.card_enabled) &&
+    row.price_cents != null &&
+    row.price_cents > 0 &&
+    cardCheckoutConfigured();
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingTop: 88 }}>
       <GiftClaim
@@ -84,7 +120,10 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ id:
           priceLabel: formatPrice(row.price_cents),
           imageUrl: image?.storage_path ? `${baseUrl}/storage/v1/object/public/photos/${image.storage_path}` : null,
           pixEnabled: Boolean(row.pix_enabled),
+          cardEnabled,
           taken: Boolean(row.taken_by_name),
+          held,
+          takenName: row.taken_by_name,
         }}
         pix={
           row.pix_enabled
@@ -102,6 +141,7 @@ export default async function GiftDetailPage({ params }: { params: Promise<{ id:
           recipient: address.recipient,
           line: address.address_line,
         }))}
+        paymentNotice={paymentNotice}
       />
     </div>
   );
