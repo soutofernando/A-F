@@ -3,13 +3,22 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-const HOLD_MS = 30 * 60 * 1000;
+const HOLD_MS = 5 * 60 * 1000;
 
 export type CardCheckoutResult =
   | { ok: true; url: string }
   | { ok: false; message: string };
 
 export type PaymentNotice = 'approved' | 'pending' | 'failure' | 'conflict';
+
+type SyncOptions = { revalidate?: boolean };
+
+function revalidateGiftPaths(giftId: string) {
+  revalidatePath('/presentes');
+  revalidatePath(`/presentes/${giftId}`);
+  revalidatePath('/');
+  revalidatePath('/admin/presentes');
+}
 
 type PreferenceResponse = {
   id?: string;
@@ -112,7 +121,7 @@ export async function startCardCheckout(input: {
   }
 
   const origin = await siteOrigin();
-  const backUrl = `${origin}/presentes/${input.giftId}`;
+  const backUrl = `${origin}/api/mercadopago/return?gift=${input.giftId}`;
   const expiresAt = new Date(Date.now() + HOLD_MS).toISOString();
   const preference: Record<string, unknown> = {
     items: [
@@ -180,21 +189,36 @@ export async function startCardCheckout(input: {
   return { ok: true, url: checkoutUrl };
 }
 
-export async function syncMercadoPagoPayment(mpPaymentId: string, expectedGiftId?: string): Promise<PaymentNotice | null> {
+export async function syncMercadoPagoPayment(
+  mpPaymentId: string,
+  expectedGiftId?: string,
+  options: SyncOptions = {},
+): Promise<PaymentNotice | null> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token || !/^\d+$/.test(mpPaymentId)) return null;
 
-  const response = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`https://api.mercadopago.com/v1/payments/${mpPaymentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+  } catch {
+    return null;
+  }
   if (!response.ok) return null;
 
   const payment = (await response.json()) as PaymentResponse;
   const reference = payment.external_reference ?? '';
   if (!/^[0-9a-f-]{36}$/i.test(reference)) return null;
 
-  const admin = createAdminClient();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return null;
+  }
+
   const { data: row } = await admin
     .from('gift_payments')
     .select('id, gift_id, amount_cents')
@@ -216,16 +240,20 @@ export async function syncMercadoPagoPayment(mpPaymentId: string, expectedGiftId
   });
   if (error || typeof status !== 'string') return null;
 
-  revalidatePath('/presentes');
-  revalidatePath(`/presentes/${row.gift_id}`);
-  revalidatePath('/');
-  revalidatePath('/admin/presentes');
+  if (options.revalidate !== false) {
+    revalidateGiftPaths(row.gift_id);
+  }
   return paymentNotice(status);
 }
 
-export async function releaseCardCheckout(paymentId: string, giftId: string) {
+export async function releaseCardCheckout(paymentId: string, giftId: string, options: SyncOptions = {}) {
   if (!/^[0-9a-f-]{36}$/i.test(paymentId)) return;
-  const admin = createAdminClient();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return;
+  }
   const { data: row } = await admin
     .from('gift_payments')
     .select('id, gift_id, status')
@@ -233,9 +261,35 @@ export async function releaseCardCheckout(paymentId: string, giftId: string) {
     .maybeSingle();
   if (!row || row.gift_id !== giftId || row.status !== 'pending') return;
   await admin.rpc('release_gift_card', { p_payment_id: paymentId });
-  revalidatePath('/presentes');
-  revalidatePath(`/presentes/${giftId}`);
-  revalidatePath('/');
+  if (options.revalidate !== false) {
+    revalidateGiftPaths(giftId);
+  }
+}
+
+export async function resolveMercadoPagoReturn(input: {
+  giftId: string;
+  paymentId: string;
+  status: string;
+  externalReference: string;
+}): Promise<PaymentNotice | null> {
+  const { giftId, paymentId, status, externalReference } = input;
+  if (!/^[0-9a-f-]{36}$/i.test(giftId)) return null;
+
+  if (/^\d+$/.test(paymentId)) {
+    const notice = await syncMercadoPagoPayment(paymentId, giftId, { revalidate: true });
+    if (notice) return notice;
+    if (status === 'approved') return 'approved';
+    if (status === 'pending' || status === 'in_process') return 'pending';
+    if (status === 'failure' || status === 'rejected' || status === 'cancelled') return 'failure';
+    return null;
+  }
+
+  if (/^[0-9a-f-]{36}$/i.test(externalReference) && (status === 'failure' || status === 'rejected')) {
+    await releaseCardCheckout(externalReference, giftId, { revalidate: true });
+    return 'failure';
+  }
+
+  return null;
 }
 
 export function verifyMercadoPagoSignature(input: {

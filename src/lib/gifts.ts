@@ -11,6 +11,8 @@ export type Gift = {
   cat: string;
   taken: boolean;
   reserved: boolean;
+  /** Quem presenteou (vazio se só reservado). */
+  takenBy: string;
   label: string;
   imageUrl?: string | null;
 };
@@ -51,6 +53,7 @@ export function toPublicGifts(rows: GiftRow[], baseUrl = process.env.NEXT_PUBLIC
       cat: row.category,
       taken: taken || held,
       reserved: !taken && held,
+      takenBy: row.taken_by_name?.trim() ?? '',
       label: (row.description || row.category).toUpperCase(),
       imageUrl: image?.storage_path ? `${baseUrl}/storage/v1/object/public/photos/${image.storage_path}` : null,
     };

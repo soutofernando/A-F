@@ -454,6 +454,59 @@ img, canvas, video {
   transition: transform .35s ease;
   padding: 8px;
   min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.gift-card--taken {
+  opacity: 0.88;
+}
+
+.gift-card--taken .gift-card__media img,
+.gift-card--taken .gift-card__media .ph-label {
+  filter: grayscale(0.35) saturate(0.85);
+}
+
+.gift-card__stamp {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gift-card__stamp-label {
+  width: 128%;
+  flex-shrink: 0;
+  transform: rotate(-14deg);
+  background: var(--azul-profundo);
+  color: #fff;
+  text-align: center;
+  padding: 10px 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(9px, 2.6vw, 12px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(23, 59, 102, 0.32);
+}
+
+.gift-card__stamp-label.is-reserved {
+  background: var(--dourado);
+  color: var(--azul-profundo);
+  box-shadow: 0 6px 18px rgba(201, 162, 93, 0.35);
+}
+
+.gift-card__giver {
+  margin: 8px 4px 0;
+  color: var(--texto-suave);
+  letter-spacing: 0.06em;
+}
+
+.gift-card__giver--muted {
+  font-style: italic;
 }
 
 @media (min-width: 720px) {
@@ -754,11 +807,10 @@ img, canvas, video {
     font-size: inherit;
   }
 
-  .gift-card__reserved {
-    top: 22px;
-    right: 22px;
-    padding: 6px 10px;
-    font-size: inherit;
+  .gift-card__stamp-label {
+    padding: 14px 0;
+    font-size: 13px;
+    letter-spacing: 0.32em;
   }
 
   .gift-card__cta {

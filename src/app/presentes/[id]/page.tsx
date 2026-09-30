@@ -53,15 +53,20 @@ export default async function GiftDetailPage({
 }) {
   const { id } = await params;
   const query = await searchParams;
+  const card = one(query.card);
   const paymentId = one(query.payment_id) || one(query.collection_id);
   const status = one(query.status) || one(query.collection_status);
   const externalReference = one(query.external_reference);
 
   let paymentNotice: PaymentNotice | null = null;
-  if (/^\d+$/.test(paymentId)) {
-    paymentNotice = await syncMercadoPagoPayment(paymentId, id);
+  if (card === 'approved' || card === 'pending' || card === 'failure' || card === 'conflict') {
+    paymentNotice = card;
+  } else if (/^\d+$/.test(paymentId)) {
+    // Links antigos do Mercado Pago que ainda apontam direto para /presentes/[id]
+    paymentNotice = await syncMercadoPagoPayment(paymentId, id, { revalidate: false });
+    if (!paymentNotice && status === 'approved') paymentNotice = 'approved';
   } else if (/^[0-9a-f-]{36}$/i.test(externalReference) && (status === 'failure' || status === 'rejected')) {
-    await releaseCardCheckout(externalReference, id);
+    await releaseCardCheckout(externalReference, id, { revalidate: false });
     paymentNotice = 'failure';
   }
 

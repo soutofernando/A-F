@@ -15,6 +15,27 @@ function normalizeNames(raw: ConfirmationName[]): ConfirmationName[] {
   return out;
 }
 
+export async function addConfirmationFamily(formData: FormData) {
+  const name = String(formData.get('name') ?? '').trim();
+  if (name.length < 2) return;
+
+  const contact = String(formData.get('contact') ?? '').trim() || null;
+  const attending = formData.get('attending') === 'on';
+  const names: ConfirmationName[] = attending ? [{ name, kind: 'adult' }] : [];
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('confirmations').insert({
+    attending,
+    party_size: names.length,
+    names,
+    contact,
+    message: null,
+  });
+
+  if (error) return;
+  revalidatePath('/admin/confirmacoes');
+}
+
 export async function updateConfirmationNames(
   confirmationId: string,
   attending: boolean,

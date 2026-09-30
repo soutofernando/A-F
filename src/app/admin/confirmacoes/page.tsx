@@ -1,16 +1,8 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { ConfirmationPartyEditor } from '@/components/admin/ConfirmationPartyEditor';
-import {
-  Card,
-  PageHeader,
-  Pill,
-  Stat,
-  SubmitButton,
-  adminTableStyle,
-  adminThStyle,
-  adminTdStyle,
-} from '@/components/admin/ui';
+import { ConfirmationsAdminPanel } from '@/components/admin/ConfirmationsAdminPanel';
+import { addConfirmationFamily } from '@/app/admin/confirmacoes/actions';
+import { Card, PageHeader, Stat } from '@/components/admin/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,75 +86,22 @@ export default async function ConfirmacoesPage() {
 
       <Card
         title="Todas as respostas"
-        subtitle="Mais recentes primeiro. Edite nomes, marque criança ou remova alguém — salva ao sair do campo ou ao clicar."
+        subtitle="Adicione famílias manualmente, busque por nome e edite a lista — salva ao sair do campo."
       >
-        {list.length === 0 ? (
-          <div style={{ fontStyle: 'italic', color: '#6E6A5C', padding: '20px 0' }}>
-            Nenhuma resposta de pré-confirmação registrada ainda.
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={adminTableStyle}>
-              <thead>
-                <tr>
-                  <th style={adminThStyle}>Status</th>
-                  <th style={adminThStyle}>Nomes</th>
-                  <th style={adminThStyle}>Contato</th>
-                  <th style={adminThStyle}>Recado</th>
-                  <th style={adminThStyle}>Quando</th>
-                  <th style={adminThStyle}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((c) => (
-                  <tr key={c.id}>
-                    <td style={adminTdStyle}>
-                      {c.attending ? (
-                        <Pill variant="success">vai ({c.party_size})</Pill>
-                      ) : (
-                        <Pill variant="danger">não vai</Pill>
-                      )}
-                    </td>
-                    <td style={adminTdStyle}>
-                      <ConfirmationPartyEditor
-                        confirmationId={c.id}
-                        attending={c.attending}
-                        initialNames={c.names ?? []}
-                      />
-                    </td>
-                    <td style={{ ...adminTdStyle, fontSize: 12, color: '#A9A492' }}>
-                      {c.contact || '—'}
-                    </td>
-                    <td style={{ ...adminTdStyle, fontStyle: 'italic', fontSize: 13, maxWidth: 220 }}>
-                      {c.message || '—'}
-                    </td>
-                    <td style={{ ...adminTdStyle, fontSize: 11, color: '#6E6A5C', whiteSpace: 'nowrap' }}>
-                      {fmt.format(new Date(c.created_at))}
-                    </td>
-                    <td style={adminTdStyle}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-                        {c.attending && (
-                          <form action={unconfirmFamily}>
-                            <input type="hidden" name="id" value={c.id} />
-                            <SubmitButton variant="outline" small>
-                              desconfirmar
-                            </SubmitButton>
-                          </form>
-                        )}
-                        <form action={deleteConfirmation}>
-                          <input type="hidden" name="id" value={c.id} />
-                          <SubmitButton variant="danger" small>
-                            excluir
-                          </SubmitButton>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <ConfirmationsAdminPanel
+          rows={list.map((c) => ({
+            id: c.id,
+            attending: c.attending,
+            party_size: c.party_size,
+            names: c.names,
+            contact: c.contact,
+            message: c.message,
+            createdAtLabel: fmt.format(new Date(c.created_at)),
+          }))}
+          addFamilyAction={addConfirmationFamily}
+          unconfirmAction={unconfirmFamily}
+          deleteAction={deleteConfirmation}
+        />
       </Card>
     </div>
   );

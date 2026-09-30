@@ -77,7 +77,7 @@ export function GiftsBand({
   ];
   const isPixTab = cat === 'Pix';
   const byCategory = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
-  const list = byCategory.filter((gift) => matchesSearch(query, gift.name));
+  const list = byCategory.filter((gift) => matchesSearch(query, gift.name, gift.takenBy));
 
   const perPage = Math.max(1, pageSize);
   const totalPages = Math.max(1, Math.ceil(list.length / perPage));
@@ -149,15 +149,15 @@ export function GiftsBand({
       {!isPixTab && (
         <label className="gifts-search" style={{ display: 'block', marginTop: 18, maxWidth: 420 }}>
           <span className="micro" style={{ display: 'block', marginBottom: 8, color: 'var(--texto-suave)' }}>
-            Buscar presente
+            Buscar presente ou quem presenteou
           </span>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Digite o nome do produto…"
+            placeholder="Produto ou nome de quem presenteou…"
             className="gifts-search__input"
-            aria-label="Buscar presente por nome"
+            aria-label="Buscar presente por nome ou por quem presenteou"
           />
         </label>
       )}
@@ -292,7 +292,7 @@ function GiftCard({ gift }: { gift: Gift }) {
   const [shift, setShift] = useState('scale(1.06)');
   return (
     <article
-      className="gift-card"
+      className={gift.taken ? 'gift-card gift-card--taken' : 'gift-card'}
       onPointerMove={(event) => {
         if (event.pointerType !== 'mouse') return;
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -306,9 +306,16 @@ function GiftCard({ gift }: { gift: Gift }) {
         setTilt('none');
         setShift('scale(1.06)');
       }}
-      style={{ transform: tilt, opacity: gift.taken ? 0.72 : 1, position: 'relative' }}
+      style={{ transform: tilt, position: 'relative' }}
     >
       <div className="gift-card__media">
+        {gift.taken ? (
+          <div className="gift-card__stamp" aria-hidden>
+            <span className={gift.reserved ? 'gift-card__stamp-label is-reserved' : 'gift-card__stamp-label'}>
+              {gift.reserved ? 'Reservado' : 'Presenteado'}
+            </span>
+          </div>
+        ) : null}
         {gift.imageUrl ? (
           <img src={gift.imageUrl} alt="" style={{ transform: shift }} />
         ) : (
@@ -325,9 +332,13 @@ function GiftCard({ gift }: { gift: Gift }) {
         {gift.price}
       </p>
       {gift.taken ? (
-        <span className="micro gift-card__reserved">
-          {gift.reserved ? 'Reservado' : 'Presenteado'}
-        </span>
+        gift.takenBy && !gift.reserved ? (
+          <p className="micro gift-card__giver">por {gift.takenBy}</p>
+        ) : (
+          <span className="micro gift-card__giver gift-card__giver--muted">
+            {gift.reserved ? 'Aguardando pagamento' : 'Indisponível'}
+          </span>
+        )
       ) : (
         <Link href={`/presentes/${gift.id}`} className="btn btn-primary btn-sm gift-card__cta">
           <RusticIcon name="gift" size={14} />
