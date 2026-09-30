@@ -74,7 +74,7 @@ export default async function ConfirmacoesPage() {
       <PageHeader
         kicker="PRÉ-CONFIRMAÇÃO"
         title="pré-confirmação das famílias"
-        subtitle="Respostas do link /confirmar (interesse inicial). Não substitui a confirmação de presença na home do site — veja em Presenças."
+        subtitle="Respostas antigas de interesse inicial (pré-confirmação). A confirmação oficial é na home do site — veja em Presenças."
       />
 
       <div
@@ -86,7 +86,7 @@ export default async function ConfirmacoesPage() {
         }}
       >
         <Stat label="Famílias confirmadas" value={yes.length} meta={`${no.length} não poderão`} />
-        <Stat label="Pessoas na pré-lista" value={totalPeople} meta="formulário /confirmar" />
+        <Stat label="Pessoas na pré-lista" value={totalPeople} meta="pré-confirmação" />
         <Stat label="Adultos" value={totalAdults} meta="marcados no formulário" />
         <Stat label="Crianças" value={totalChildren} meta="marcadas no formulário" />
         <Stat label="Respostas no total" value={list.length} />
@@ -98,7 +98,7 @@ export default async function ConfirmacoesPage() {
       >
         {list.length === 0 ? (
           <div style={{ fontStyle: 'italic', color: '#6E6A5C', padding: '20px 0' }}>
-            Nenhuma confirmação ainda. Envie o link /confirmar para as famílias.
+            Nenhuma resposta de pré-confirmação registrada ainda.
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>

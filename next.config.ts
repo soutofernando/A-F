@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       { source: '/despesas/:path*', destination: '/despensa/:path*' },
     ];
   },
+  async redirects() {
+    return [{ source: '/confirmar', destination: '/', permanent: true }];
+  },
 };
 
 export default nextConfig;

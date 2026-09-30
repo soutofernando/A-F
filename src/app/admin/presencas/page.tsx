@@ -69,7 +69,7 @@ export default async function PresencasPage() {
       <PageHeader
         kicker="PRESENÇA NA FESTA"
         title="quem confirmou no site"
-        subtitle="A lista de convidados tem mais nomes do que a pré-lista (/confirmar). Aqui acompanhamos só quem já fez a pré-confirmação e quem respondeu na home."
+        subtitle="A lista de convidados tem mais nomes do que a pré-lista. Aqui acompanhamos quem já fez a pré-confirmação e quem respondeu na home."
       />
 
       {showResetHint && (
@@ -114,7 +114,7 @@ export default async function PresencasPage() {
         <Stat
           label="Pré-lista aguardando"
           value={stats.preListAwaitingHome}
-          meta={`de ${stats.preListMatchedGuests} na lista · ${stats.preListNameCount} nomes no /confirmar`}
+          meta={`de ${stats.preListMatchedGuests} na lista · ${stats.preListNameCount} nomes na pré-lista`}
         />
         <Stat
           label="Convidados cadastrados"
