@@ -8,6 +8,7 @@ import { GIFTS_REQUIRE_RSVP } from '@/lib/site';
 import { hasConfirmedPresence } from '@/lib/rsvp-storage';
 import { createClient } from '@/lib/supabase/client';
 import { FieldBackdrop } from '@/components/FieldBackdrop';
+import { PixFreeGift } from '@/components/home/PixFreeGift';
 import { RusticIcon, type RusticName } from '@/components/RusticIcon';
 
 export type { Gift };
@@ -61,6 +62,7 @@ export function GiftsBand({
     ...GIFT_CATEGORIES.map((item) => ({ id: item.id, icon: item.icon as RusticName })),
     ...legacyIds.map((id) => ({ id, icon: 'gift' as RusticName })),
   ];
+  const isPixTab = cat === 'Pix';
   const list = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
 
   useEffect(() => {
@@ -111,23 +113,29 @@ export function GiftsBand({
         ))}
       </div>
       <div style={{ position: 'relative', marginTop: 22 }}>
-        <ul
-          className="gifts-grid"
-          style={{
-            filter: open ? 'none' : 'blur(1.5px)',
-          }}
-        >
-          {list.map((gift) => (
-            <li key={gift.id}>
-              <GiftCard gift={gift} />
-            </li>
-          ))}
-          {remote && list.length === 0 && (
-            <li className="italic" style={{ gridColumn: '1 / -1', color: 'var(--texto-suave)', padding: '12px 0' }}>
-              A lista ainda está sendo preparada.
-            </li>
-          )}
-        </ul>
+        {isPixTab ? (
+          <div style={{ filter: open ? 'none' : 'blur(1.5px)' }}>
+            <PixFreeGift />
+          </div>
+        ) : (
+          <ul
+            className="gifts-grid"
+            style={{
+              filter: open ? 'none' : 'blur(1.5px)',
+            }}
+          >
+            {list.map((gift) => (
+              <li key={gift.id}>
+                <GiftCard gift={gift} />
+              </li>
+            ))}
+            {remote && list.length === 0 && (
+              <li className="italic" style={{ gridColumn: '1 / -1', color: 'var(--texto-suave)', padding: '12px 0' }}>
+                A lista ainda está sendo preparada.
+              </li>
+            )}
+          </ul>
+        )}
         {!open && (
           <div className="veil">
             <p className="serif" style={{ fontSize: 28, maxWidth: 280 }}>
