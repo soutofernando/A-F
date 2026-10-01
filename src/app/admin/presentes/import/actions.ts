@@ -5,7 +5,7 @@ import { parseGiftImportText } from '@/lib/admin/gift-import';
 import { resolveGiftImageId } from '@/lib/admin/upload-presentes-image';
 import type { GiftCategoryId } from '@/lib/gift-categories';
 import { GIFT_CATEGORY_IDS } from '@/lib/gift-categories';
-import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 
 export type GiftImportResult = {
   imported: number;
@@ -34,7 +34,10 @@ export async function importGiftsFromText(input: {
     return { imported: 0, skippedImages: 0, parseErrors, rowErrors };
   }
 
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) {
+    return { imported: 0, skippedImages: 0, parseErrors, rowErrors };
+  }
   const { data: orderRow } = await supabase
     .from('gifts')
     .select('display_order')

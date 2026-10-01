@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import { Card, PageHeader, Pill, Stat, SubmitButton } from '@/components/admin/ui';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,8 @@ async function setApproved(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   const approved = formData.get('approved') === '1';
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('messages').update({ approved }).eq('id', id);
   revalidatePath('/admin/recados');
   revalidatePath('/mensagens');
@@ -19,7 +21,8 @@ async function deleteMessage(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('messages').delete().eq('id', id);
   revalidatePath('/admin/recados');
   revalidatePath('/mensagens');

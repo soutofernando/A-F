@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import {
   Card,
   DateField,
@@ -22,7 +23,8 @@ const fmtDateBR = new Intl.DateTimeFormat('pt-BR', {
 
 async function saveConfig(formData: FormData) {
   'use server';
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   const updates: Array<{ key: string; value: string; updated_at: string }> = [];
 
   for (const [name, raw] of formData.entries()) {
@@ -54,7 +56,8 @@ async function addAddress(formData: FormData) {
   const addressLine = String(formData.get('address_line') ?? '').trim();
   if (!label || !addressLine) return;
   const recipient = String(formData.get('recipient') ?? '').trim();
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('gift_addresses').insert({
     label,
     recipient: recipient || null,
@@ -69,7 +72,8 @@ async function deleteAddress(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('gift_addresses').delete().eq('id', id);
   revalidatePath('/admin/config');
   revalidatePath('/presentes');

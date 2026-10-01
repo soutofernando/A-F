@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import { ConfirmationsAdminPanel } from '@/components/admin/ConfirmationsAdminPanel';
 import { addConfirmationFamily } from '@/app/admin/confirmacoes/actions';
 import { Card, PageHeader, Stat } from '@/components/admin/ui';
@@ -27,7 +28,8 @@ async function deleteConfirmation(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('confirmations').delete().eq('id', id);
   revalidatePath('/admin/confirmacoes');
 }
@@ -36,7 +38,8 @@ async function unconfirmFamily(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase
     .from('confirmations')
     .update({ attending: false, party_size: 0, names: [] })

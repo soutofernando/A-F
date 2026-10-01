@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isAllowedAdminEmail, safeAdminRedirectPath } from '@/lib/admin/allowed-emails';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/admin';
+  const next = safeAdminRedirectPath(searchParams.get('next'));
 
   if (!code) {
     return NextResponse.redirect(`${origin}/admin/login?error=missing_code`);
@@ -27,6 +28,15 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !isAllowedAdminEmail(user.email)) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/admin/login?error=unauthorized_email`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

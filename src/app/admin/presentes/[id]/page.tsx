@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import {
   Card,
   Checkbox,
@@ -27,7 +28,8 @@ async function updateGift(formData: FormData) {
   const priceCents = priceReais ? Math.round(parseFloat(priceReais) * 100) : null;
   const image_id = await resolveGiftImageIdFromForm(formData, title);
 
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase
     .from('gifts')
     .update({

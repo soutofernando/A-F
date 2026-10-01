@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import {
   Card,
   Field,
@@ -39,7 +40,8 @@ async function uploadImage(formData: FormData) {
       .slice(0, 40) || 'img';
   const storage_path = `${context}/${stamp}-${safeName}.${ext}`;
 
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   const buffer = Buffer.from(await file.arrayBuffer());
   const up = await supabase.storage.from('photos').upload(storage_path, buffer, {
     contentType: file.type || 'image/jpeg',
@@ -59,7 +61,8 @@ async function deleteImage(formData: FormData) {
   const id = String(formData.get('id') ?? '');
   const path = String(formData.get('path') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   if (path) {
     await supabase.storage.from('photos').remove([path]);
   }

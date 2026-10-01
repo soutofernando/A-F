@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import { clearGuestRsvp } from '@/app/admin/confirmacoes/actions';
 import {
   Card,
@@ -35,7 +36,8 @@ async function createGuest(formData: FormData) {
   const slug = slugRaw ? slugify(slugRaw) : slugify(display_name);
   if (!slug) return;
 
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('guests').insert({
     slug,
     display_name,
@@ -52,7 +54,8 @@ async function deleteGuest(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('guests').delete().eq('id', id);
   revalidatePath('/admin/convidados');
 }

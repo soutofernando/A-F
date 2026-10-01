@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { adminDb } from '@/lib/admin/require-admin';
 import {
   Card,
   Checkbox,
@@ -34,7 +35,8 @@ async function createGift(formData: FormData) {
 
   const image_id = await resolveGiftImageIdFromForm(formData, title);
 
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('gifts').insert({
     title,
     category,
@@ -55,7 +57,8 @@ async function deleteGift(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('gifts').delete().eq('id', id);
   revalidatePath('/admin/presentes');
   revalidatePath('/presentes');
@@ -66,7 +69,8 @@ async function clearTakenBy(formData: FormData) {
   'use server';
   const id = String(formData.get('id') ?? '');
   if (!id) return;
-  const supabase = await createClient();
+  const supabase = await adminDb();
+  if (!supabase) return;
   await supabase.from('gifts').update({
     taken_by_name: null,
     taken_at: null,

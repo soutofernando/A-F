@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { requestAdminMagicLink } from '@/app/admin/login/actions';
 import { Btn } from '@/components/Btn';
 import { Ornament } from '@/components/Ornament';
 import { Logo } from '@/components/Logo';
@@ -16,6 +16,9 @@ function authErrorMessage(
   }
   if (description) return description;
   if (error === 'missing_code') return 'Link inválido. Solicite um novo abaixo.';
+  if (error === 'unauthorized_email') {
+    return 'Este e-mail não está autorizado. Use o e-mail cadastrado como administrador.';
+  }
   if (error) return error;
   return null;
 }
@@ -40,16 +43,10 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const supabase = createClient();
-    // Sem query string — Supabase exige match exato na allowlist (use .../auth/callback** no dashboard).
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: redirectTo },
-    });
+    const result = await requestAdminMagicLink(email);
     setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
     setSent(true);

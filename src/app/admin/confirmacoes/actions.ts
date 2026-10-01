@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { assertAdminSession } from '@/lib/admin/require-admin';
 
 export type ConfirmationName = { name: string; kind: 'adult' | 'child' };
 
@@ -16,14 +16,16 @@ function normalizeNames(raw: ConfirmationName[]): ConfirmationName[] {
 }
 
 export async function addConfirmationFamily(formData: FormData) {
+  const session = await assertAdminSession();
+  if (!session) return;
+  const { supabase } = session;
+
   const name = String(formData.get('name') ?? '').trim();
   if (name.length < 2) return;
 
   const contact = String(formData.get('contact') ?? '').trim() || null;
   const attending = formData.get('attending') === 'on';
   const names: ConfirmationName[] = attending ? [{ name, kind: 'adult' }] : [];
-
-  const supabase = await createClient();
   const { error } = await supabase.from('confirmations').insert({
     attending,
     party_size: names.length,
@@ -49,7 +51,9 @@ export async function updateConfirmationNames(
     return { ok: false as const, error: 'Limite de 30 pessoas por confirmação.' };
   }
 
-  const supabase = await createClient();
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
   const { error } = await supabase
     .from('confirmations')
     .update({
@@ -77,10 +81,12 @@ function normalizePersonName(value: string) {
 
 /** Remove RSVPs dos convidados cujos nomes batem com a lista (após desconfirmar no admin). */
 export async function clearRsvpsForGuestNames(names: string[]) {
+  const session = await assertAdminSession();
+  if (!session) return;
+  const { supabase } = session;
+
   const wanted = new Set(names.map((n) => normalizePersonName(n)).filter(Boolean));
   if (wanted.size === 0) return;
-
-  const supabase = await createClient();
   const { data: guests } = await supabase.from('guests').select('id, display_name, full_name');
   const ids: string[] = [];
   for (const guest of guests ?? []) {
@@ -94,7 +100,9 @@ export async function clearRsvpsForGuestNames(names: string[]) {
 }
 
 export async function clearAllOfficialRsvps() {
-  const supabase = await createClient();
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
   const { error } = await supabase.rpc('admin_clear_all_rsvps');
   if (error) return { ok: false as const, error: error.message };
   revalidatePath('/admin/presencas');
@@ -105,7 +113,9 @@ export async function clearAllOfficialRsvps() {
 
 export async function clearGuestRsvp(guestId: string) {
   if (!guestId) return { ok: false as const, error: 'Convidado inválido.' };
-  const supabase = await createClient();
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
   const { error } = await supabase.from('rsvps').delete().eq('guest_id', guestId);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath('/admin/convidados');
