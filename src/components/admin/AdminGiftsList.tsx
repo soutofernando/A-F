@@ -16,6 +16,7 @@ export type AdminGiftListItem = {
   claim_method: string | null;
   pix_enabled: boolean | null;
   card_enabled: boolean | null;
+  delivery_enabled: boolean | null;
 };
 
 export function AdminGiftsList({
@@ -132,7 +133,9 @@ export function AdminGiftsList({
                   {g.pix_enabled && 'PIX'}
                   {g.pix_enabled && g.card_enabled && ' · '}
                   {g.card_enabled && 'CARTÃO'}
-                  {!g.pix_enabled && !g.card_enabled && 'sem pagamento'}
+                  {(g.pix_enabled || g.card_enabled) && g.delivery_enabled !== false && ' · '}
+                  {g.delivery_enabled !== false && 'ENTREGA'}
+                  {!g.pix_enabled && !g.card_enabled && g.delivery_enabled === false && 'sem forma de presentear'}
                 </div>
               </div>
 

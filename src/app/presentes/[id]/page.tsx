@@ -21,6 +21,7 @@ type GiftRow = {
   price_cents: number | null;
   pix_enabled: boolean | null;
   card_enabled: boolean | null;
+  delivery_enabled: boolean | null;
   taken_by_name: string | null;
   card_hold_until: string | null;
   images: { storage_path: string; alt: string | null } | { storage_path: string; alt: string | null }[] | null;
@@ -75,7 +76,7 @@ export default async function GiftDetailPage({
   const [{ data: gift }, { data: config }, { data: addresses }] = await Promise.all([
     supabase
       .from('gifts')
-      .select('id, title, description, category, price_cents, pix_enabled, card_enabled, taken_by_name, card_hold_until, images(storage_path, alt)')
+      .select('id, title, description, category, price_cents, pix_enabled, card_enabled, delivery_enabled, taken_by_name, card_hold_until, images(storage_path, alt)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('config').select('key, value').in('key', ['pix_key', 'pix_bank', 'pix_holder']),
@@ -134,6 +135,7 @@ export default async function GiftDetailPage({
           imageUrl: image?.storage_path ? `${baseUrl}/storage/v1/object/public/photos/${image.storage_path}` : null,
           pixEnabled: Boolean(row.pix_enabled),
           cardEnabled,
+          deliveryEnabled: row.delivery_enabled !== false,
           taken: Boolean(row.taken_by_name),
           held,
           takenName: row.taken_by_name,

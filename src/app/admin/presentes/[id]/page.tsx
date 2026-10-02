@@ -40,6 +40,7 @@ async function updateGift(formData: FormData) {
       image_id,
       pix_enabled: formData.get('pix_enabled') === 'on',
       card_enabled: formData.get('card_enabled') === 'on',
+      delivery_enabled: formData.get('delivery_enabled') === 'on',
       display_order: Number(formData.get('display_order') ?? 0) || 0,
     })
     .eq('id', id);
@@ -137,9 +138,14 @@ export default async function EditGiftPage({ params }: { params: Promise<{ id: s
 
           <TextField label="Descrição" name="description" defaultValue={gift.description} rows={3} />
 
-          <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
+          <div style={{ display: 'flex', gap: 24, padding: '4px 0', flexWrap: 'wrap' }}>
             <Checkbox label="Aceita PIX" name="pix_enabled" defaultChecked={gift.pix_enabled ?? false} />
             <Checkbox label="Aceita cartão" name="card_enabled" defaultChecked={gift.card_enabled ?? false} />
+            <Checkbox
+              label="Aceita entrega do item"
+              name="delivery_enabled"
+              defaultChecked={gift.delivery_enabled ?? true}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: 14, marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(239,231,219,.08)' }}>

@@ -20,6 +20,7 @@ export async function importGiftsFromText(input: {
   discoverImages: boolean;
   pixEnabled: boolean;
   cardEnabled: boolean;
+  deliveryEnabled: boolean;
 }): Promise<GiftImportResult> {
   const defaultCategory = GIFT_CATEGORY_IDS.includes(input.defaultCategory as GiftCategoryId)
     ? (input.defaultCategory as GiftCategoryId)
@@ -62,6 +63,7 @@ export async function importGiftsFromText(input: {
       image_id: imageId,
       pix_enabled: input.pixEnabled,
       card_enabled: input.cardEnabled,
+      delivery_enabled: input.deliveryEnabled,
       display_order: displayOrder,
     });
 

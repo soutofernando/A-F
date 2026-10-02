@@ -45,6 +45,7 @@ async function createGift(formData: FormData) {
     image_id,
     pix_enabled: formData.get('pix_enabled') === 'on',
     card_enabled: formData.get('card_enabled') === 'on',
+    delivery_enabled: formData.get('delivery_enabled') === 'on',
     display_order: Number(formData.get('display_order') ?? 0) || 0,
   });
   revalidatePath('/admin/presentes');
@@ -94,6 +95,7 @@ type Gift = {
   image_id: string | null;
   pix_enabled: boolean | null;
   card_enabled: boolean | null;
+  delivery_enabled: boolean | null;
   display_order: number | null;
   taken_by_name: string | null;
   claim_method: string | null;
@@ -107,7 +109,7 @@ export default async function PresentesPage() {
   const [{ data: gifts }, { data: images }] = await Promise.all([
     supabase
       .from('gifts')
-      .select('id, title, description, category, price_cents, image_id, pix_enabled, card_enabled, display_order, taken_by_name, claim_method, claim_address_text')
+      .select('id, title, description, category, price_cents, image_id, pix_enabled, card_enabled, delivery_enabled, display_order, taken_by_name, claim_method, claim_address_text')
       .order('display_order')
       .order('title'),
     supabase.from('images').select('id, alt, storage_path, context').order('alt'),
@@ -196,9 +198,10 @@ export default async function PresentesPage() {
 
           <TextField label="Descrição (opcional)" name="description" rows={2} />
 
-          <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
+          <div style={{ display: 'flex', gap: 24, padding: '4px 0', flexWrap: 'wrap' }}>
             <Checkbox label="Aceita PIX" name="pix_enabled" defaultChecked />
             <Checkbox label="Aceita cartão" name="card_enabled" defaultChecked />
+            <Checkbox label="Aceita entrega do item" name="delivery_enabled" defaultChecked />
           </div>
 
           <div>
@@ -223,6 +226,7 @@ export default async function PresentesPage() {
               claim_method: g.claim_method,
               pix_enabled: g.pix_enabled,
               card_enabled: g.card_enabled,
+              delivery_enabled: g.delivery_enabled,
             };
           })}
           deleteGift={deleteGift}

@@ -23,6 +23,7 @@ export function GiftImportForm() {
     const discoverImages = formData.get('discover_images') === 'on';
     const pixEnabled = formData.get('pix_enabled') === 'on';
     const cardEnabled = formData.get('card_enabled') === 'on';
+    const deliveryEnabled = formData.get('delivery_enabled') === 'on';
 
     startTransition(async () => {
       const next = await importGiftsFromText({
@@ -31,6 +32,7 @@ export function GiftImportForm() {
         discoverImages,
         pixEnabled,
         cardEnabled,
+        deliveryEnabled,
       });
       setResult(next);
     });
@@ -119,6 +121,7 @@ export function GiftImportForm() {
               />
               <Checkbox label="Aceita PIX" name="pix_enabled" defaultChecked />
               <Checkbox label="Aceita cartão" name="card_enabled" defaultChecked />
+              <Checkbox label="Aceita entrega do item" name="delivery_enabled" defaultChecked />
             </div>
 
             <p className="italic" style={{ fontSize: 12, color: 'rgba(239,231,219,.45)', margin: 0, lineHeight: 1.5 }}>

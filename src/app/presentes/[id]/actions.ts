@@ -33,6 +33,9 @@ export async function claimGift(input: {
     if (raw.includes('unavailable')) {
       return { ok: false, message: 'Este presente acabou de ser escolhido por outra pessoa.' };
     }
+    if (raw.includes('delivery disabled')) {
+      return { ok: false, message: 'Este presente só pode ser pago com PIX ou cartão.' };
+    }
     if (raw.includes('address')) {
       return { ok: false, message: 'Esse endereço não está mais disponível.' };
     }

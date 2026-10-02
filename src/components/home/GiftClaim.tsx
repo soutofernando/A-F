@@ -56,6 +56,7 @@ type Props = {
     imageUrl: string | null;
     pixEnabled: boolean;
     cardEnabled: boolean;
+    deliveryEnabled: boolean;
     taken: boolean;
     held: boolean;
     takenName: string | null;
@@ -96,7 +97,7 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
   const nameRef = useRef<HTMLInputElement>(null);
   const [giverName, setGiverName] = useState('');
   const [mode, setMode] = useState<'pix' | 'card' | 'item' | null>(
-    gift.pixEnabled || gift.cardEnabled ? null : 'item',
+    gift.pixEnabled || gift.cardEnabled ? null : gift.deliveryEnabled ? 'item' : null,
   );
   const [delivery, setDelivery] = useState<string>(addresses[0]?.id ?? 'in_hand');
   const [copied, setCopied] = useState<string | null>(null);
@@ -295,20 +296,25 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             </span>
           </button>
         ) : null}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={mode === 'item'}
-          className={mode === 'item' ? 'gift-choice is-on' : 'gift-choice'}
-          onClick={() => setMode('item')}
-        >
-          <IconGift />
-          <span className="gift-choice__body">
-            <strong>Entregar o presente</strong>
-            <span>Envie para um endereço cadastrado ou entregue nas mãos.</span>
-          </span>
-        </button>
+        {gift.deliveryEnabled ? (
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'item'}
+            className={mode === 'item' ? 'gift-choice is-on' : 'gift-choice'}
+            onClick={() => setMode('item')}
+          >
+            <IconGift />
+            <span className="gift-choice__body">
+              <strong>Entregar o presente</strong>
+              <span>Envie para um endereço cadastrado ou entregue nas mãos.</span>
+            </span>
+          </button>
+        ) : null}
       </div>
+      {!gift.pixEnabled && !gift.cardEnabled && !gift.deliveryEnabled ? (
+        <p className="italic gift-claim__lede">Este presente ainda não tem uma forma de presentear cadastrada.</p>
+      ) : null}
 
       {mode === 'pix' && gift.pixEnabled ? (
         <section className="gift-claim__panel">
@@ -334,7 +340,9 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             </>
           ) : (
             <p className="italic gift-claim__lede">
-              A chave PIX ainda não foi cadastrada. Dá para entregar o presente, ou pedir o código aos noivos.
+              {gift.deliveryEnabled
+                ? 'A chave PIX ainda não foi cadastrada. Dá para entregar o presente, ou pedir o código aos noivos.'
+                : 'A chave PIX ainda não foi cadastrada. Peça o código aos noivos.'}
             </p>
           )}
         </section>
@@ -354,7 +362,7 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
         </section>
       ) : null}
 
-      {mode === 'item' ? (
+      {mode === 'item' && gift.deliveryEnabled ? (
         <section className="gift-claim__panel">
           <div className="gift-claim__addresses" role="radiogroup" aria-label="Onde entregar">
             <label className={delivery === 'in_hand' ? 'gift-address is-on' : 'gift-address'}>
