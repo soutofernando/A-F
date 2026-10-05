@@ -9,7 +9,6 @@ import { RsvpForm } from '@/components/home/RsvpForm';
 import { GiftsBand } from '@/components/home/GiftsBand';
 import { AlbumBand, NotesBand } from '@/components/home/AlbumNotes';
 import { HomeMotion } from '@/components/home/HomeMotion';
-import { FilmIntro } from '@/components/home/FilmIntro';
 import { BotanicalRule } from '@/components/home/BotanicalRule';
 import { FieldBackdrop } from '@/components/FieldBackdrop';
 
@@ -68,7 +67,6 @@ export default function HomePage() {
 
   return (
     <div>
-      <FilmIntro />
       <HomeMotion />
       <Hero name1={name1} name2={name2} subtitle={config.heroSubtitle} whenLine={whenLine} target={weddingTimestamp} />
       <BotanicalRule />
