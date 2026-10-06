@@ -138,7 +138,6 @@ export default async function GiftDetailPage({
           deliveryEnabled: row.delivery_enabled !== false,
           taken: Boolean(row.taken_by_name),
           held,
-          takenName: row.taken_by_name,
         }}
         pix={
           row.pix_enabled

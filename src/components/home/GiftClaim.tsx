@@ -59,7 +59,6 @@ type Props = {
     deliveryEnabled: boolean;
     taken: boolean;
     held: boolean;
-    takenName: string | null;
   };
   pix: {
     bank: string;
@@ -189,9 +188,7 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
         <p className="italic gift-claim__lede">
           {done
             ? `${giverName.trim()}, este presente ficou registrado no seu nome.`
-            : gift.takenName
-              ? `Este presente ficou com ${gift.takenName}.`
-              : 'Este presente já foi escolhido.'}
+            : 'Este presente já foi escolhido.'}
         </p>
       </div>
     );

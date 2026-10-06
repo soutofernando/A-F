@@ -77,7 +77,7 @@ export function GiftsBand({
   ];
   const isPixTab = cat === 'Pix';
   const byCategory = cat === 'Todos' ? catalog : catalog.filter((gift) => gift.cat === cat);
-  const list = byCategory.filter((gift) => matchesSearch(query, gift.name, gift.takenBy));
+  const list = byCategory.filter((gift) => matchesSearch(query, gift.name));
 
   const perPage = Math.max(1, pageSize);
   const totalPages = Math.max(1, Math.ceil(list.length / perPage));
@@ -149,15 +149,15 @@ export function GiftsBand({
       {!isPixTab && (
         <label className="gifts-search" style={{ display: 'block', marginTop: 18, maxWidth: 420 }}>
           <span className="micro" style={{ display: 'block', marginBottom: 8, color: 'var(--texto-suave)' }}>
-            Buscar presente ou quem presenteou
+            Buscar presente
           </span>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Produto ou nome de quem presenteou…"
+            placeholder="Nome do presente…"
             className="gifts-search__input"
-            aria-label="Buscar presente por nome ou por quem presenteou"
+            aria-label="Buscar presente por nome"
           />
         </label>
       )}
@@ -332,13 +332,9 @@ function GiftCard({ gift }: { gift: Gift }) {
         {gift.price}
       </p>
       {gift.taken ? (
-        gift.takenBy && !gift.reserved ? (
-          <p className="micro gift-card__giver">por {gift.takenBy}</p>
-        ) : (
-          <span className="micro gift-card__giver gift-card__giver--muted">
-            {gift.reserved ? 'Aguardando pagamento' : 'Indisponível'}
-          </span>
-        )
+        <span className="micro gift-card__giver gift-card__giver--muted">
+          {gift.reserved ? 'Aguardando pagamento' : 'Presenteado'}
+        </span>
       ) : (
         <Link href={`/presentes/${gift.id}`} className="btn btn-primary btn-sm gift-card__cta">
           <RusticIcon name="gift" size={14} />
