@@ -39,6 +39,15 @@ type PaymentResponse = {
 
 const centsToUnitPrice = (cents: number) => Number((cents / 100).toFixed(2));
 
+const giftPictureUrl = (images: { storage_path: string } | { storage_path: string }[] | null) => {
+  const image = Array.isArray(images) ? images[0] : images;
+  const path = image?.storage_path?.trim();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!path || !base?.startsWith('https://')) return undefined;
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  return `${base}/storage/v1/object/public/photos/${encoded}`;
+};
+
 export async function siteOrigin() {
   const headerStore = await headers();
   const host = headerStore.get('x-forwarded-host') ?? headerStore.get('host');
@@ -96,7 +105,7 @@ export async function startCardCheckout(input: {
   const admin = createAdminClient();
   const { data: giftRow, error: giftError } = await admin
     .from('gifts')
-    .select('price_cents')
+    .select('price_cents, images(storage_path)')
     .eq('id', input.giftId)
     .maybeSingle();
   if (giftError || giftRow?.price_cents == null || giftRow.price_cents <= 0) {
@@ -138,22 +147,25 @@ export async function startCardCheckout(input: {
   const origin = await siteOrigin();
   const backUrl = `${origin}/api/mercadopago/return?gift=${input.giftId}`;
   const expiresAt = new Date(Date.now() + HOLD_MS).toISOString();
+  const pictureUrl = giftPictureUrl(
+    (giftRow as { images?: { storage_path: string } | { storage_path: string }[] | null }).images ?? null,
+  );
   const preference: Record<string, unknown> = {
     items: [
       {
         id: input.giftId,
         title: `Presente · ${reserved.title}`.slice(0, 120),
         description: 'Lista de presentes de Alicia e Fernando',
+        category_id: 'others',
         quantity: 1,
         currency_id: 'BRL',
         unit_price: centsToUnitPrice(reserved.amount_cents),
+        ...(pictureUrl ? { picture_url: pictureUrl } : {}),
       },
     ],
-    payer: { name: giverName.slice(0, 80) },
     back_urls: { success: backUrl, pending: backUrl, failure: backUrl },
     external_reference: reserved.payment_id,
     notification_url: `${origin}/api/mercadopago/webhook`,
-    statement_descriptor: 'CASAMENTO',
     payment_methods: {
       installments: maxCardInstallments(),
       default_installments: 1,

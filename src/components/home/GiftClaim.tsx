@@ -105,7 +105,9 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
   const [modal, setModal] = useState<ClaimMethod | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(
-    paymentNotice === 'failure' ? 'O pagamento não foi concluído. O presente continua na lista.' : '',
+    paymentNotice === 'failure'
+      ? 'O Mercado Pago recusou este cartão. O presente continua na lista. Use o PIX ou tente o cartão outra vez mais tarde, no aparelho em que você já costuma comprar.'
+      : '',
   );
   const [done, setDone] = useState(false);
 
