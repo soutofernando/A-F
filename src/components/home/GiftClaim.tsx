@@ -66,6 +66,8 @@ type Props = {
     holder: string;
     payload: string | null;
     qrDataUrl: string | null;
+    keyLabel: string | null;
+    keyCopy: string | null;
   } | null;
   addresses: GiftAddress[];
   paymentNotice?: 'approved' | 'pending' | 'failure' | 'conflict' | null;
@@ -273,7 +275,7 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             <IconPix />
             <span className="gift-choice__body">
               <strong>Enviar o valor no PIX</strong>
-              <span>Copia e cola ou QR Code, no valor deste presente.</span>
+              <span>Copia e cola, QR Code ou a chave do telefone, no valor deste presente.</span>
             </span>
           </button>
         ) : null}
@@ -333,6 +335,17 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
               </div>
               {pix.qrDataUrl ? (
                 <img className="gift-claim__qr" src={pix.qrDataUrl} alt="QR Code do PIX" />
+              ) : null}
+              {pix.keyLabel && pix.keyCopy ? (
+                <div className="gift-claim__fallback">
+                  <p className="gift-claim__hint italic">
+                    Se o banco disser que o destinatário não existe ou que o copia e cola falhou, pague pela chave do telefone.
+                  </p>
+                  <p className="gift-claim__key">{pix.keyLabel}</p>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => markCopied('pix-key', pix.keyCopy ?? '')}>
+                    {copied === 'pix-key' ? 'Chave copiada' : 'Copiar chave'}
+                  </button>
+                </div>
               ) : null}
               <button type="button" className="btn btn-primary" onClick={() => openModal('pix')}>
                 Já fiz o PIX

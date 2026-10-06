@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { buildPixPayload } from '@/lib/pix-brcode';
+import { buildPixPayload, describePixKey } from '@/lib/pix-brcode';
 import { createClient } from '@/lib/supabase/client';
 
 function parseBrlToCents(raw: string): number | null {
@@ -34,7 +34,7 @@ export function PixFreeGift() {
   const [configReady, setConfigReady] = useState(false);
   const [amountInput, setAmountInput] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [qrError, setQrError] = useState('');
 
   useEffect(() => {
@@ -62,15 +62,17 @@ export function PixFreeGift() {
 
   const amountCents = useMemo(() => parseBrlToCents(amountInput), [amountInput]);
 
+  const pixKeyInfo = useMemo(() => describePixKey(pixKey), [pixKey]);
+
   const payload = useMemo(() => {
-    if (!pixKey || amountCents == null) return null;
+    if (!pixKeyInfo || amountCents == null) return null;
     return buildPixPayload({
-      key: pixKey,
+      key: pixKeyInfo.emv,
       holder: holder || 'Alicia e Fernando',
       amountCents,
       reference: `PIX${String(Date.now()).slice(-8)}`,
     });
-  }, [pixKey, holder, amountCents]);
+  }, [pixKeyInfo, holder, amountCents]);
 
   useEffect(() => {
     if (!payload) {
@@ -106,12 +108,11 @@ export function PixFreeGift() {
       ? (amountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
       : null;
 
-  const markCopied = async () => {
-    if (!payload) return;
+  const markCopied = async (id: string, value: string) => {
     try {
-      await copyText(payload);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await copyText(value);
+      setCopied(id);
+      window.setTimeout(() => setCopied((current) => (current === id ? null : current)), 1800);
     } catch {
       setQrError('Não foi possível copiar. Selecione o texto e copie manualmente.');
     }
@@ -165,11 +166,22 @@ export function PixFreeGift() {
           ) : null}
           <div className="gift-claim__copyrow">
             <textarea className="gift-claim__payload" readOnly value={payload} rows={4} />
-            <button type="button" className="btn btn-secondary btn-sm" onClick={markCopied}>
-              {copied ? 'Copiado' : 'Copiar código PIX'}
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => markCopied('pix', payload)}>
+              {copied === 'pix' ? 'Copiado' : 'Copiar código PIX'}
             </button>
           </div>
-          <button type="button" className="btn btn-primary" onClick={markCopied}>
+          {pixKeyInfo?.phone ? (
+            <div className="gift-claim__fallback">
+              <p className="gift-claim__hint italic">
+                Se o banco recusar o código, pague pela chave do telefone e informe o valor.
+              </p>
+              <p className="gift-claim__key">{pixKeyInfo.label}</p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => markCopied('pix-key', pixKeyInfo.copy)}>
+                {copied === 'pix-key' ? 'Chave copiada' : 'Copiar chave'}
+              </button>
+            </div>
+          ) : null}
+          <button type="button" className="btn btn-primary" onClick={() => markCopied('pix', payload)}>
             Enviar o PIX
           </button>
           <p className="gift-claim__hint italic">

@@ -708,6 +708,24 @@ img, canvas, video {
   padding: 10px;
 }
 
+.gift-claim__fallback {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--linha);
+  background: #fff;
+}
+
+.gift-claim__key {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+  color: var(--navy, #173b66);
+}
+
 .gift-claim__hint,
 .gift-claim__error {
   margin: 0;

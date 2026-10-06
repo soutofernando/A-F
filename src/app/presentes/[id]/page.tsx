@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
 import { GiftClaim } from '@/components/home/GiftClaim';
-import { buildPixPayload } from '@/lib/pix-brcode';
+import { buildPixPayload, describePixKey } from '@/lib/pix-brcode';
 import {
   cardCheckoutConfigured,
   releaseCardCheckout,
@@ -92,11 +92,11 @@ export default async function GiftDetailPage({
   const settings = new Map((config ?? []).map((item) => [item.key, item.value ?? '']));
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const image = imageOf(row.images);
-  const pixKey = settings.get('pix_key')?.trim() ?? '';
+  const pixKey = describePixKey(settings.get('pix_key') ?? '');
   const payload =
     row.pix_enabled && pixKey
       ? buildPixPayload({
-          key: pixKey,
+          key: pixKey.emv,
           holder: settings.get('pix_holder')?.trim() || 'Alicia e Fernando',
           amountCents: row.price_cents,
           reference: row.id.replace(/-/g, '').slice(0, 20),
@@ -147,6 +147,8 @@ export default async function GiftDetailPage({
                 holder: settings.get('pix_holder')?.trim() ?? '',
                 payload,
                 qrDataUrl,
+                keyLabel: pixKey?.phone ? pixKey.label : null,
+                keyCopy: pixKey?.phone ? pixKey.copy : null,
               }
             : null
         }
