@@ -52,6 +52,7 @@ export async function claimGift(input: {
 export async function startCardCheckout(input: {
   giftId: string;
   giverName: string;
+  payerEmail?: string | null;
   deviceId?: string | null;
 }) {
   return openCardCheckout(input);

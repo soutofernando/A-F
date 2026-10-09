@@ -98,6 +98,7 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
   const titleId = useId();
   const nameRef = useRef<HTMLInputElement>(null);
   const [giverName, setGiverName] = useState('');
+  const [payerEmail, setPayerEmail] = useState('');
   const [mode, setMode] = useState<'pix' | 'card' | 'item' | null>(
     gift.pixEnabled || gift.cardEnabled ? null : gift.deliveryEnabled ? 'item' : null,
   );
@@ -107,12 +108,13 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(
     paymentNotice === 'failure'
-      ? 'O Mercado Pago recusou este cartão. O presente continua na lista. Use o PIX ou tente o cartão outra vez mais tarde, no aparelho em que você já costuma comprar.'
+      ? 'O Mercado Pago recusou este cartão. O presente continua na lista. Pague com PIX ou, no Mercado Pago, entre na sua conta e use o saldo. Outro cartão só no aparelho em que você já compra online.'
       : '',
   );
   const [done, setDone] = useState(false);
 
   const nameOk = giverName.trim().length >= 2;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail.trim());
   const pixReady = Boolean(pix?.payload);
 
   useEffect(() => {
@@ -223,10 +225,19 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
       nameRef.current?.scrollIntoView({ block: 'center' });
       return;
     }
+    if (!emailOk) {
+      setError('Escreva um e-mail válido. O Mercado Pago usa esse dado na análise do cartão.');
+      return;
+    }
     setPending(true);
     setError('');
     const deviceId = await waitForMercadoPagoDeviceId();
-    const result = await startCardCheckout({ giftId: gift.id, giverName, deviceId });
+    const result = await startCardCheckout({
+      giftId: gift.id,
+      giverName,
+      payerEmail,
+      deviceId,
+    });
     if (!result.ok) {
       setPending(false);
       setError(result.message);
@@ -375,6 +386,22 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
             presente {gift.priceLabel}
           </p>
           {gift.cardFeeNote ? <p className="gift-claim__hint">{gift.cardFeeNote}</p> : null}
+          <label className="gift-claim__name">
+            <span>E-mail de quem paga</span>
+            <input
+              type="email"
+              className={error && mode === 'card' && !emailOk ? 'field field-error' : 'field'}
+              value={payerEmail}
+              onChange={(event) => setPayerEmail(event.target.value)}
+              placeholder="voce@email.com"
+              autoComplete="email"
+              inputMode="email"
+              maxLength={120}
+            />
+          </label>
+          <p className="gift-claim__hint">
+            O Mercado Pago usa esse e-mail na análise do cartão. Ele não aparece na lista de presentes.
+          </p>
           <button type="button" className="btn btn-primary" disabled={pending} onClick={payWithCard}>
             {pending ? 'Abrindo pagamento' : 'Ir para o pagamento'}
           </button>

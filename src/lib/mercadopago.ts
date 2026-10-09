@@ -40,6 +40,31 @@ type PaymentResponse = {
 
 const centsToUnitPrice = (cents: number) => Number((cents / 100).toFixed(2));
 
+const STATEMENT_DESCRIPTOR = 'PRESENTESAF';
+
+const payerEmail = (value: unknown) => {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase().slice(0, 120);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+};
+
+const splitPayerName = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0]?.slice(0, 40) ?? '';
+  const lastName = parts.slice(1).join(' ').slice(0, 40);
+  return { firstName, lastName: lastName || undefined };
+};
+
+const mercadoPagoCategory = (category: string | null | undefined) => {
+  const value = (category ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (value.includes('eletro')) return 'electronics';
+  if (value.includes('casa') || value.includes('cozinha') || value.includes('decor')) return 'home';
+  return 'others';
+};
+
 const giftPictureUrl = (images: { storage_path: string } | { storage_path: string }[] | null) => {
   const image = Array.isArray(images) ? images[0] : images;
   const path = image?.storage_path?.trim();
@@ -92,6 +117,7 @@ export function cardCheckoutConfigured() {
 export async function startCardCheckout(input: {
   giftId: string;
   giverName: string;
+  payerEmail?: string | null;
   deviceId?: string | null;
 }): Promise<CardCheckoutResult> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
@@ -103,11 +129,16 @@ export async function startCardCheckout(input: {
   if (giverName.length < 2) {
     return { ok: false, message: 'Escreva o nome de quem está dando o presente.' };
   }
+  const email = payerEmail(input.payerEmail);
+  if (!email) {
+    return { ok: false, message: 'Escreva um e-mail válido. O Mercado Pago usa esse dado na análise do cartão.' };
+  }
+  const payerName = splitPayerName(giverName);
 
   const admin = createAdminClient();
   const { data: giftRow, error: giftError } = await admin
     .from('gifts')
-    .select('price_cents, images(storage_path)')
+    .select('price_cents, category, images(storage_path)')
     .eq('id', input.giftId)
     .maybeSingle();
   if (giftError || giftRow?.price_cents == null || giftRow.price_cents <= 0) {
@@ -152,19 +183,44 @@ export async function startCardCheckout(input: {
   const pictureUrl = giftPictureUrl(
     (giftRow as { images?: { storage_path: string } | { storage_path: string }[] | null }).images ?? null,
   );
+  const categoryId = mercadoPagoCategory(
+    (giftRow as { category?: string | null }).category,
+  );
+  const item = {
+    id: input.giftId,
+    title: `Presente · ${reserved.title}`.slice(0, 120),
+    description: 'Lista de presentes de Alicia e Fernando',
+    category_id: categoryId,
+    quantity: 1,
+    currency_id: 'BRL',
+    unit_price: centsToUnitPrice(reserved.amount_cents),
+    ...(pictureUrl ? { picture_url: pictureUrl } : {}),
+  };
   const preference: Record<string, unknown> = {
-    items: [
-      {
-        id: input.giftId,
-        title: `Presente · ${reserved.title}`.slice(0, 120),
-        description: 'Lista de presentes de Alicia e Fernando',
-        category_id: 'others',
-        quantity: 1,
-        currency_id: 'BRL',
-        unit_price: centsToUnitPrice(reserved.amount_cents),
-        ...(pictureUrl ? { picture_url: pictureUrl } : {}),
+    items: [item],
+    payer: {
+      email,
+      name: payerName.firstName,
+      ...(payerName.lastName ? { surname: payerName.lastName } : {}),
+    },
+    additional_info: {
+      items: [
+        {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          category_id: item.category_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          ...(pictureUrl ? { picture_url: pictureUrl } : {}),
+        },
+      ],
+      payer: {
+        first_name: payerName.firstName,
+        ...(payerName.lastName ? { last_name: payerName.lastName } : {}),
       },
-    ],
+    },
+    statement_descriptor: STATEMENT_DESCRIPTOR,
     back_urls: { success: backUrl, pending: backUrl, failure: backUrl },
     external_reference: reserved.payment_id,
     notification_url: `${origin}/api/mercadopago/webhook`,
