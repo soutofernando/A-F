@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { claimGift, startCardCheckout, type ClaimMethod } from '@/app/presentes/[id]/actions';
+import { loadMercadoPagoDeviceScript, waitForMercadoPagoDeviceId } from '@/lib/mp-device-id';
 
 export type GiftAddress = {
   id: string;
@@ -115,6 +116,11 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
   const pixReady = Boolean(pix?.payload);
 
   useEffect(() => {
+    if (!gift.cardEnabled || gift.taken) return;
+    loadMercadoPagoDeviceScript();
+  }, [gift.cardEnabled, gift.taken]);
+
+  useEffect(() => {
     if (!modal) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !pending) setModal(null);
@@ -219,7 +225,8 @@ export function GiftClaim({ gift, pix, addresses, paymentNotice = null }: Props)
     }
     setPending(true);
     setError('');
-    const result = await startCardCheckout({ giftId: gift.id, giverName });
+    const deviceId = await waitForMercadoPagoDeviceId();
+    const result = await startCardCheckout({ giftId: gift.id, giverName, deviceId });
     if (!result.ok) {
       setPending(false);
       setError(result.message);

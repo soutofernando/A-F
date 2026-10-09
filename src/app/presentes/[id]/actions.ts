@@ -49,6 +49,10 @@ export async function claimGift(input: {
   return { ok: true };
 }
 
-export async function startCardCheckout(input: { giftId: string; giverName: string }) {
+export async function startCardCheckout(input: {
+  giftId: string;
+  giverName: string;
+  deviceId?: string | null;
+}) {
   return openCardCheckout(input);
 }

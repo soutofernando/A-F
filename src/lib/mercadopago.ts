@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { cardChargeCentsFromGift, maxCardInstallments } from '@/lib/card-fee';
+import { mercadoPagoDeviceId } from '@/lib/mp-device-id';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const HOLD_MS = 5 * 60 * 1000;
@@ -91,6 +92,7 @@ export function cardCheckoutConfigured() {
 export async function startCardCheckout(input: {
   giftId: string;
   giverName: string;
+  deviceId?: string | null;
 }): Promise<CardCheckoutResult> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token) {
@@ -183,6 +185,7 @@ export async function startCardCheckout(input: {
 
   const release = () => admin.rpc('release_gift_card', { p_payment_id: reserved.payment_id });
 
+  const deviceId = mercadoPagoDeviceId(input.deviceId);
   let response: Response;
   try {
     response = await fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -191,6 +194,7 @@ export async function startCardCheckout(input: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'X-Idempotency-Key': reserved.payment_id,
+        ...(deviceId ? { 'X-meli-session-id': deviceId } : {}),
       },
       body: JSON.stringify(preference),
     });
