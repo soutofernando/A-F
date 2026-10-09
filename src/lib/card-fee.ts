@@ -24,6 +24,14 @@ export function maxCardInstallments() {
   return Math.min(12, Math.max(1, Math.floor(n)));
 }
 
+/** Mercado Pago exige cerca de R$ 5 por parcela. Abaixo disso o botão Pagar fica cinza. */
+const MIN_INSTALLMENT_BRL = 5;
+
+export function cardInstallmentLimit(amountReais: number, cap = maxCardInstallments()) {
+  if (!Number.isFinite(amountReais) || amountReais < MIN_INSTALLMENT_BRL) return 1;
+  return Math.min(cap, Math.max(1, Math.floor(amountReais / MIN_INSTALLMENT_BRL)));
+}
+
 export function cardFeeRate() {
   const raw = process.env.MERCADOPAGO_CARD_FEE_RATE?.trim();
   if (!raw) return DEFAULT_FEE_RATE;

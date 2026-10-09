@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
-import { cardChargeCentsFromGift, maxCardInstallments } from '@/lib/card-fee';
+import { cardChargeCentsFromGift, cardInstallmentLimit } from '@/lib/card-fee';
 import { mercadoPagoDeviceId } from '@/lib/mp-device-id';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -180,6 +180,7 @@ export async function startCardCheckout(input: {
   const origin = await siteOrigin();
   const backUrl = `${origin}/api/mercadopago/return?gift=${input.giftId}`;
   const expiresAt = new Date(Date.now() + HOLD_MS).toISOString();
+  const opensAt = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   const pictureUrl = giftPictureUrl(
     (giftRow as { images?: { storage_path: string } | { storage_path: string }[] | null }).images ?? null,
   );
@@ -225,12 +226,12 @@ export async function startCardCheckout(input: {
     external_reference: reserved.payment_id,
     notification_url: `${origin}/api/mercadopago/webhook`,
     payment_methods: {
-      installments: maxCardInstallments(),
+      installments: cardInstallmentLimit(item.unit_price),
       default_installments: 1,
       excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }, { id: 'bank_transfer' }],
     },
     expires: true,
-    expiration_date_from: new Date().toISOString(),
+    expiration_date_from: opensAt,
     expiration_date_to: expiresAt,
     metadata: { gift_id: input.giftId },
   };
