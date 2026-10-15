@@ -46,7 +46,17 @@ export function guestsFromPartyRows(rows: PartyMemberRow[], catalog: GuestWithId
     const fromName = catalog.find(
       (g) => normalizeName(g.full_name || g.display_name) === key,
     );
-    if (fromName) out.push(fromName);
+    if (fromName) {
+      out.push(fromName);
+      continue;
+    }
+    out.push({
+      id: row.guest_id,
+      display_name: row.name,
+      full_name: row.name,
+      group_name: null,
+      max_companions: 0,
+    });
   }
   return out;
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { assertAdminSession } from '@/lib/admin/require-admin';
+import { ensureGuestsForNames } from '@/lib/admin/sync-confirmation-guests';
 
 export type ConfirmationName = { name: string; kind: 'adult' | 'child' };
 
@@ -35,7 +36,12 @@ export async function addConfirmationFamily(formData: FormData) {
   });
 
   if (error) return;
+  await ensureGuestsForNames(
+    supabase,
+    names.map((entry) => entry.name),
+  );
   revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/convidados');
 }
 
 export async function updateConfirmationNames(
@@ -66,7 +72,16 @@ export async function updateConfirmationNames(
     return { ok: false as const, error: error.message };
   }
 
+  const synced = await ensureGuestsForNames(
+    supabase,
+    clean.map((entry) => entry.name),
+  );
+  if (!synced.ok) {
+    return { ok: false as const, error: synced.error };
+  }
+
   revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/convidados');
   return { ok: true as const, names: clean };
 }
 

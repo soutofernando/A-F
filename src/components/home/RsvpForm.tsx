@@ -112,6 +112,26 @@ export function RsvpForm({ embedded = false }: Props) {
 
   const result = useMemo(() => matchGuests(guests, q), [guests, q]);
 
+  useEffect(() => {
+    if (step !== 'search' || loading || result.kind !== 'none') return;
+    const query = q.trim();
+    if (query.length < 2) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('guests')
+        .select('id, display_name, full_name, group_name, greeting, max_companions')
+        .order('display_name');
+      if (cancelled || !data) return;
+      setGuests(data as Guest[]);
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [loading, q, result.kind, step]);
+
   const isFamily = partyMembers.length > 1;
 
   useEffect(() => {
