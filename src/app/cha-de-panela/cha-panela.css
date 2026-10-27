@@ -1,0 +1,245 @@
+.cp {
+  min-height: 100vh;
+  background: #f1eee0;
+  color: #243028;
+  padding: 20px 18px 72px;
+}
+
+.cp-invite {
+  display: block;
+  width: min(720px, 100%);
+  height: auto;
+  margin: 0 auto;
+}
+
+.cp-list {
+  width: min(560px, 100%);
+  margin: 40px auto 0;
+}
+
+.cp-list h1 {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(34px, 6vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.cp-lead {
+  margin-top: 12px;
+  max-width: 34em;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 20px;
+  line-height: 1.35;
+  color: #3c4e3e;
+}
+
+.cp-enxoval {
+  margin-top: 28px;
+}
+
+.cp-enxoval p {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 22px;
+  line-height: 1.2;
+  color: #243028;
+}
+
+.cp-enxoval ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 28px;
+  list-style: none;
+  margin-top: 14px;
+}
+
+.cp-enxoval li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 52px;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 16px;
+  line-height: 1;
+  color: #3c4e3e;
+}
+
+.cp-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(36, 48, 40, 0.18);
+}
+
+.cp-swatch-cinza { background: #9a9892; }
+.cp-swatch-branco { background: #fffdf8; }
+.cp-swatch-preto { background: #1c1c1c; }
+
+.cp-items {
+  list-style: none;
+  margin-top: 28px;
+  border-top: 1px solid #c5cbb8;
+}
+
+.cp-items li {
+  border-bottom: 1px solid #c5cbb8;
+}
+
+.cp-items button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 2px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: #243028;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.cp-items button:hover:not(:disabled) {
+  color: #152018;
+}
+
+.cp-items button:disabled {
+  cursor: default;
+  color: #6a7468;
+}
+
+.cp-items button:disabled .cp-name {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #5c675c;
+}
+
+.cp-chosen {
+  flex: none;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 13px;
+  color: #6d776c;
+}
+
+.cp-empty {
+  margin-top: 24px;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 20px;
+}
+
+.cp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(36, 48, 40, 0.46);
+}
+
+.cp-dialog {
+  width: min(440px, 100%);
+  background: #f7f4ea;
+  color: #243028;
+  border: 1.5px solid #3c4e3e;
+  border-radius: 28px;
+  padding: 28px 26px 22px;
+}
+
+.cp-dialog h2 {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.cp-dialog-item {
+  margin-top: 12px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #3c4e3e;
+}
+
+.cp-dialog label {
+  display: block;
+  margin-top: 22px;
+  font-size: 15px;
+}
+
+.cp-dialog input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #3c4e3e;
+  border-radius: 0;
+  color: #243028;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.cp-dialog input:focus {
+  outline: none;
+  border-bottom-width: 2px;
+}
+
+.cp-error {
+  margin-top: 12px;
+  color: #7a3b32;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.cp-actions button {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 18px;
+  line-height: 1;
+  padding: 12px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.cp-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.cp-confirm {
+  background: #243028;
+  color: #f6f4ec;
+  border: 1px solid #243028;
+}
+
+.cp-cancel {
+  background: transparent;
+  color: #243028;
+  border: 1px solid #8b9486;
+}
+
+@media (max-width: 640px) {
+  .cp {
+    padding: 0 0 56px;
+  }
+
+  .cp-list {
+    padding: 0 18px;
+  }
+
+  .cp-items button {
+    font-size: 19px;
+  }
+}

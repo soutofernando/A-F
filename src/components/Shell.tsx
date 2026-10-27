@@ -26,6 +26,10 @@ export function Shell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
+  if (pathname === '/cha-de-panela' || pathname?.startsWith('/cha-de-panela/')) {
+    return <div style={{ minHeight: '100vh', background: '#f1eee0' }}>{children}</div>;
+  }
+
   const hideFooter =
     pathname === '/despensa' ||
     pathname?.startsWith('/despensa/') ||

@@ -12,6 +12,7 @@ const NAV: Array<[string, string]> = [
   ['/admin/confirmacoes', 'Pré-confirmação'],
   ['/admin/convidados', 'Convidados'],
   ['/admin/presentes', 'Presentes'],
+  ['/admin/cha-de-panela', 'Chá de panela'],
   ['/admin/imagens', 'Imagens'],
   ['/admin/recados', 'Recados'],
   ['/admin/config', 'Configurações'],
