@@ -36,22 +36,20 @@ export default async function ChaDePanelaPage() {
       <section className="cp-list">
         <h1 className="text-xl text-left">Lista do chá</h1>
         <h2>
-          Nosso chá de panela
-
           Essa lista é apenas uma inspiração, viu? Você pode escolher qualquer
           presente que desejar, ou até mesmo trazer algo diferente que ache que
           combina com a nossa casa!
-
+          <br />
           O mais importante para nós é ter você pertinho, compartilhando esse
           momento tão especial da nossa história. Sabemos que essa fase dos
           preparativos é maravilhosa, mas também pode ser um pouquinho
           estressante! Por isso, queremos aproveitar cada etapa, dar boas
           risadas, criar memórias e nos divertir muito com vocês.
-
+          <br />
           Sua presença e seu carinho já são um presente enorme para nós. Então,
           venha de coração aberto, com vontade de celebrar e fazer parte desse
           momento tão lindo das nossas vidas!
-
+          <br />
           Esperamos você para comemorar com a gente!
         </h2>
         <p className="cp-lead">

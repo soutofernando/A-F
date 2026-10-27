@@ -125,6 +125,54 @@
   color: #6d776c;
 }
 
+.cp-custom {
+  margin-top: 36px;
+}
+
+.cp-custom > p:first-child {
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 26px;
+  line-height: 1.15;
+  color: #243028;
+}
+
+.cp-custom label {
+  display: block;
+  margin-top: 18px;
+  font-size: 15px;
+  color: #3c4e3e;
+}
+
+.cp-custom input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #3c4e3e;
+  border-radius: 0;
+  color: #243028;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.cp-custom input:focus {
+  outline: none;
+  border-bottom-width: 2px;
+}
+
+.cp-custom .cp-confirm {
+  margin-top: 22px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-family: var(--font-serif), 'Cormorant Garamond', serif;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .cp-empty {
   margin-top: 24px;
   font-family: var(--font-serif), 'Cormorant Garamond', serif;
