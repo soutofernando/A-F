@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { clearAllOfficialRsvps, clearGuestRsvp } from '@/app/admin/confirmacoes/actions';
+import { clearAllOfficialRsvps, clearGuestRsvp, confirmGuestRsvp } from '@/app/admin/confirmacoes/actions';
 import {
   buildPresenceParties,
   collectPreListGuestIds,
@@ -23,6 +23,14 @@ async function removeRsvp(formData: FormData) {
   'use server';
   const guestId = String(formData.get('guest_id') ?? '');
   await clearGuestRsvp(guestId);
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin/convidados');
+}
+
+async function confirmRsvp(formData: FormData) {
+  'use server';
+  const guestId = String(formData.get('guest_id') ?? '');
+  await confirmGuestRsvp(guestId);
   revalidatePath('/admin/presencas');
   revalidatePath('/admin/convidados');
 }
@@ -197,14 +205,24 @@ export default async function PresencasPage() {
                           ) : (
                             <Pill variant="muted">aguardando</Pill>
                           )}
-                          {rsvp && (
-                            <form action={removeRsvp}>
-                              <input type="hidden" name="guest_id" value={member.id} />
-                              <SubmitButton variant="outline" small>
-                                desconfirmar
-                              </SubmitButton>
-                            </form>
-                          )}
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            {rsvp?.status !== 'yes' && (
+                              <form action={confirmRsvp}>
+                                <input type="hidden" name="guest_id" value={member.id} />
+                                <SubmitButton variant="gold" small>
+                                  confirmar
+                                </SubmitButton>
+                              </form>
+                            )}
+                            {rsvp && (
+                              <form action={removeRsvp}>
+                                <input type="hidden" name="guest_id" value={member.id} />
+                                <SubmitButton variant="outline" small>
+                                  desconfirmar
+                                </SubmitButton>
+                              </form>
+                            )}
+                          </div>
                         </li>
                       );
                     })}

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { adminDb } from '@/lib/admin/require-admin';
-import { clearGuestRsvp } from '@/app/admin/confirmacoes/actions';
+import { clearGuestRsvp, confirmGuestRsvp } from '@/app/admin/confirmacoes/actions';
 import {
   Card,
   Field,
@@ -65,6 +65,15 @@ async function removeRsvp(formData: FormData) {
   const guestId = String(formData.get('guest_id') ?? '');
   await clearGuestRsvp(guestId);
   revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
+}
+
+async function confirmRsvp(formData: FormData) {
+  'use server';
+  const guestId = String(formData.get('guest_id') ?? '');
+  await confirmGuestRsvp(guestId);
+  revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
 }
 
 type Guest = {
@@ -212,6 +221,14 @@ export default async function ConvidadosPage() {
                         >
                           editar
                         </Link>
+                        {rsvp?.status !== 'yes' && (
+                          <form action={confirmRsvp} style={{ display: 'inline', marginRight: 12 }}>
+                            <input type="hidden" name="guest_id" value={g.id} />
+                            <SubmitButton variant="gold" small>
+                              confirmar
+                            </SubmitButton>
+                          </form>
+                        )}
                         {rsvp && (
                           <form action={removeRsvp} style={{ display: 'inline', marginRight: 12 }}>
                             <input type="hidden" name="guest_id" value={g.id} />

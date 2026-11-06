@@ -134,6 +134,26 @@ export async function clearGuestRsvp(guestId: string) {
   const { error } = await supabase.from('rsvps').delete().eq('guest_id', guestId);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin');
+  return { ok: true as const };
+}
+
+/** Marca presença oficial (status "yes") de um convidado, como se tivesse confirmado na home. */
+export async function confirmGuestRsvp(guestId: string) {
+  if (!guestId) return { ok: false as const, error: 'Convidado inválido.' };
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
+  const { error } = await supabase.rpc('submit_rsvp', {
+    p_guest_id: guestId,
+    p_status: 'yes',
+    p_companions: 0,
+    p_message: null,
+  });
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
   revalidatePath('/admin');
   return { ok: true as const };
 }
