@@ -141,6 +141,22 @@ export async function clearGuestRsvp(guestId: string) {
   return { ok: true as const };
 }
 
+/** WhatsApp do responsável pela família, guardado no contato da pré-confirmação. */
+export async function updateConfirmationWhatsapp(confirmationId: string, whatsapp: string) {
+  if (!confirmationId) return { ok: false as const, error: 'Família inválida.' };
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const clean = whatsapp.trim().replace(/\s+/g, ' ').slice(0, 40);
+  const { error } = await session.supabase
+    .from('confirmations')
+    .update({ contact: clean || null })
+    .eq('id', confirmationId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin/confirmacoes');
+  return { ok: true as const };
+}
+
 /** Marca presença oficial (status "yes") de um convidado, como se tivesse confirmado na home. */
 export async function confirmGuestRsvp(guestId: string) {
   if (!guestId) return { ok: false as const, error: 'Convidado inválido.' };

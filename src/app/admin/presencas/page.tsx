@@ -9,6 +9,7 @@ import {
   type GuestRow,
   type RsvpRow,
 } from '@/lib/admin/presence-parties';
+import { FamilyWhatsappField } from '@/components/admin/FamilyWhatsappField';
 import {
   Card,
   PageHeader,
@@ -52,7 +53,7 @@ export default async function PresencasPage() {
     supabase.from('rsvps').select('guest_id, status, companions, message'),
     supabase
       .from('confirmations')
-      .select('id, names, created_at')
+      .select('id, names, created_at, contact')
       .eq('attending', true)
       .order('created_at', { ascending: false }),
   ]);
@@ -61,7 +62,8 @@ export default async function PresencasPage() {
   const rsvpByGuest = new Map<string, RsvpRow>();
   (rsvps ?? []).forEach((r) => rsvpByGuest.set(r.guest_id, r as RsvpRow));
 
-  const confList = (confirmations ?? []) as ConfirmationRow[];
+  const confList = (confirmations ?? []) as Array<ConfirmationRow & { contact: string | null }>;
+  const contactById = new Map(confList.map((confirmation) => [confirmation.id, confirmation.contact?.trim() ?? '']));
   const { preListGuestIds, preListNameCount } = collectPreListGuestIds(list, confList);
   const stats = countPresenceStats(list, rsvpByGuest, preListGuestIds, preListNameCount);
   const parties = buildPresenceParties(list, confList, rsvpByGuest);
@@ -135,6 +137,24 @@ export default async function PresencasPage() {
         title="Por família (pré-confirmação)"
         subtitle="A mesma lista de famílias da pré-confirmação. Aqui dá para marcar quem vai à festa."
       >
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <a
+            href="/admin/presencas/pdf"
+            style={{
+              display: 'inline-block',
+              padding: '8px 16px',
+              border: '1px solid var(--gold-soft)',
+              color: 'var(--gold-soft)',
+              fontFamily: 'var(--font-inter), Inter, sans-serif',
+              fontSize: 11,
+              letterSpacing: '.18em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+            }}
+          >
+            exportar PDF
+          </a>
+        </div>
         {parties.length === 0 ? (
           <div style={{ fontStyle: 'italic', color: '#6E6A5C', padding: '20px 0' }}>
             Nenhuma família na pré-confirmação ainda.
@@ -179,6 +199,12 @@ export default async function PresencasPage() {
                     <p style={{ fontSize: 12, color: 'rgba(239,231,219,.45)', margin: '0 0 10px' }}>
                       {party.members.map(guestLabel).join(' · ')}
                     </p>
+                  )}
+                  {!party.key.startsWith('solo:') && (
+                    <FamilyWhatsappField
+                      confirmationId={party.key}
+                      initialValue={contactById.get(party.key) ?? ''}
+                    />
                   )}
                   <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
                     {party.members.map((member) => {
