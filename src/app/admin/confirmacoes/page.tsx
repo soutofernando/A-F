@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { adminDb } from '@/lib/admin/require-admin';
 import { ConfirmationsAdminPanel } from '@/components/admin/ConfirmationsAdminPanel';
 import { addConfirmationFamily } from '@/app/admin/confirmacoes/actions';
+import { buildPresenceParties, type GuestRow, type RsvpRow } from '@/lib/admin/presence-parties';
 import { Card, PageHeader, Stat } from '@/components/admin/ui';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,7 @@ async function deleteConfirmation(formData: FormData) {
   if (!supabase) return;
   await supabase.from('confirmations').delete().eq('id', id);
   revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/presencas');
 }
 
 async function unconfirmFamily(formData: FormData) {
@@ -45,6 +47,7 @@ async function unconfirmFamily(formData: FormData) {
     .update({ attending: false, party_size: 0, names: [] })
     .eq('id', id);
   revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/presencas');
 }
 
 export default async function ConfirmacoesPage() {
@@ -55,6 +58,24 @@ export default async function ConfirmacoesPage() {
     .order('created_at', { ascending: false });
 
   const list = (data ?? []) as Confirmation[];
+  const [{ data: guests }, { data: rsvps }] = await Promise.all([
+    supabase.from('guests').select('id, display_name, full_name, group_name').order('display_name'),
+    supabase.from('rsvps').select('guest_id, status'),
+  ]);
+  const guestList = (guests ?? []) as GuestRow[];
+  const rsvpByGuest = new Map<string, RsvpRow>();
+  (rsvps ?? []).forEach((row) => rsvpByGuest.set(row.guest_id, row as RsvpRow));
+  const parties = buildPresenceParties(
+    guestList,
+    list.map((confirmation) => ({
+      id: confirmation.id,
+      names: confirmation.names,
+      created_at: confirmation.created_at,
+    })),
+    rsvpByGuest,
+  );
+  const confirmationById = new Map(list.map((confirmation) => [confirmation.id, confirmation]));
+
   const yes = list.filter((c) => c.attending);
   const no = list.filter((c) => !c.attending);
   const totalPeople = yes.reduce((acc, c) => acc + (c.party_size || 0), 0);
@@ -69,7 +90,7 @@ export default async function ConfirmacoesPage() {
       <PageHeader
         kicker="PRÉ-CONFIRMAÇÃO"
         title="pré-confirmação das famílias"
-        subtitle="Respostas antigas de interesse inicial (pré-confirmação). A confirmação oficial é na home do site — veja em Presenças."
+        subtitle="A mesma lista de famílias de Presenças. Aqui você edita os nomes da pré-confirmação."
       />
 
       <div
@@ -88,19 +109,33 @@ export default async function ConfirmacoesPage() {
       </div>
 
       <Card
-        title="Todas as respostas"
-        subtitle="Adicione famílias manualmente, busque por nome e edite a lista — salva ao sair do campo."
+        title="Por família (pré-confirmação)"
+        subtitle="Mesma ordem e as mesmas pessoas de Presenças. O nome salva ao sair do campo."
       >
         <ConfirmationsAdminPanel
-          rows={list.map((c) => ({
-            id: c.id,
-            attending: c.attending,
-            party_size: c.party_size,
-            names: c.names,
-            contact: c.contact,
-            message: c.message,
-            createdAtLabel: fmt.format(new Date(c.created_at)),
-          }))}
+          parties={parties.map((party) => {
+            const confirmation = confirmationById.get(party.key);
+            return {
+              key: party.key,
+              title: party.title,
+              members: party.members.map((member) => ({
+                id: member.id,
+                label: member.full_name || member.display_name,
+                status: rsvpByGuest.get(member.id)?.status ?? null,
+              })),
+              confirmation: confirmation
+                ? {
+                    id: confirmation.id,
+                    attending: confirmation.attending,
+                    party_size: confirmation.party_size,
+                    names: confirmation.names,
+                    contact: confirmation.contact,
+                    message: confirmation.message,
+                    createdAtLabel: fmt.format(new Date(confirmation.created_at)),
+                  }
+                : null,
+            };
+          })}
           addFamilyAction={addConfirmationFamily}
           unconfirmAction={unconfirmFamily}
           deleteAction={deleteConfirmation}

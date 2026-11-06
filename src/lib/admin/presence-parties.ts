@@ -33,7 +33,7 @@ function findGuestByName(guests: GuestRow[], name: string): GuestRow | undefined
   return guests.find((g) => normalizeName(guestLabel(g)) === key);
 }
 
-/** Agrupa pela pré-confirmação (mesma lógica da home). Só entra na lista quem tem RSVP ou família 2+ na pré-lista. */
+/** Agrupa pela pré-confirmação (mesma lógica da home), inclusive quem veio sozinho. */
 export function buildPresenceParties(
   guests: GuestRow[],
   confirmations: ConfirmationRow[],
@@ -48,7 +48,7 @@ export function buildPresenceParties(
 
   for (const conf of sorted) {
     const names = conf.names ?? [];
-    if (names.length < 2) continue;
+    if (names.length < 1) continue;
 
     const members: GuestRow[] = [];
     for (const entry of names) {
@@ -59,7 +59,7 @@ export function buildPresenceParties(
       }
     }
 
-    if (members.length < 2) continue;
+    if (members.length < 1) continue;
 
     const title = members.map(guestLabel).join(' · ');
     parties.push({ key: conf.id, title, members });

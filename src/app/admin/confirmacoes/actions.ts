@@ -42,6 +42,7 @@ export async function addConfirmationFamily(formData: FormData) {
   );
   revalidatePath('/admin/confirmacoes');
   revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
 }
 
 export async function updateConfirmationNames(
@@ -82,6 +83,7 @@ export async function updateConfirmationNames(
 
   revalidatePath('/admin/confirmacoes');
   revalidatePath('/admin/convidados');
+  revalidatePath('/admin/presencas');
   return { ok: true as const, names: clean };
 }
 

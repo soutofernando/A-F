@@ -133,11 +133,11 @@ export default async function PresencasPage() {
 
       <Card
         title="Por família (pré-confirmação)"
-        subtitle="Lista agrupada como na busca da home. Só aparecem famílias com 2+ pessoas na pré-lista, mais convidados avulsos que já responderam na home."
+        subtitle="A mesma lista de famílias da pré-confirmação. Aqui dá para marcar quem vai à festa."
       >
         {parties.length === 0 ? (
           <div style={{ fontStyle: 'italic', color: '#6E6A5C', padding: '20px 0' }}>
-            Nenhuma família na pré-confirmação com 2+ pessoas, ou ninguém respondeu na home ainda.
+            Nenhuma família na pré-confirmação ainda.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -145,8 +145,6 @@ export default async function PresencasPage() {
               const yesCount = party.members.filter((m) => rsvpByGuest.get(m.id)?.status === 'yes').length;
               const noCount = party.members.filter((m) => rsvpByGuest.get(m.id)?.status === 'no').length;
               const hasRsvp = party.members.some((m) => rsvpByGuest.has(m.id));
-
-              if (!hasRsvp && party.members.length === 1) return null;
 
               return (
                 <div
