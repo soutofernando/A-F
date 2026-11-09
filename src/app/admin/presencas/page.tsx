@@ -1,6 +1,12 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { clearAllOfficialRsvps, clearGuestRsvp, confirmGuestRsvp } from '@/app/admin/confirmacoes/actions';
+import {
+  clearAllOfficialRsvps,
+  clearGuestRsvp,
+  confirmGuestRsvp,
+  deletePresenceFamily,
+  deletePresencePerson,
+} from '@/app/admin/confirmacoes/actions';
 import {
   buildPresenceParties,
   collectPreListGuestIds,
@@ -33,6 +39,24 @@ async function confirmRsvp(formData: FormData) {
   const guestId = String(formData.get('guest_id') ?? '');
   await confirmGuestRsvp(guestId);
   revalidatePath('/admin/presencas');
+  revalidatePath('/admin/convidados');
+}
+
+async function removePerson(formData: FormData) {
+  'use server';
+  const guestId = String(formData.get('guest_id') ?? '');
+  await deletePresencePerson(guestId);
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/convidados');
+}
+
+async function removeFamily(formData: FormData) {
+  'use server';
+  const confirmationId = String(formData.get('confirmation_id') ?? '');
+  await deletePresenceFamily(confirmationId);
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin/confirmacoes');
   revalidatePath('/admin/convidados');
 }
 
@@ -189,11 +213,21 @@ export default async function PresencasPage() {
                     <div className="serif" style={{ fontSize: 20, color: 'var(--cream)', lineHeight: 1.25 }}>
                       {party.members.length > 1 ? `Família (${party.members.length})` : party.title}
                     </div>
-                    {party.members.length > 1 && (
-                      <Pill variant={yesCount > 0 ? 'success' : noCount > 0 ? 'danger' : 'muted'}>
-                        {yesCount} vai · {noCount} não · {party.members.length - yesCount - noCount} aguardando
-                      </Pill>
-                    )}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {party.members.length > 1 && (
+                        <Pill variant={yesCount > 0 ? 'success' : noCount > 0 ? 'danger' : 'muted'}>
+                          {yesCount} vai · {noCount} não · {party.members.length - yesCount - noCount} aguardando
+                        </Pill>
+                      )}
+                      {!party.key.startsWith('solo:') && (
+                        <form action={removeFamily}>
+                          <input type="hidden" name="confirmation_id" value={party.key} />
+                          <SubmitButton variant="danger" small>
+                            excluir família
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </div>
                   </div>
                   {party.members.length > 1 && (
                     <p style={{ fontSize: 12, color: 'rgba(239,231,219,.45)', margin: '0 0 10px' }}>
@@ -213,15 +247,17 @@ export default async function PresencasPage() {
                         <li
                           key={member.id}
                           style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr auto auto',
-                            gap: 10,
+                            display: 'flex',
+                            flexWrap: 'wrap',
                             alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
                           }}
                         >
-                          <span style={{ fontSize: 14, color: 'rgba(239,231,219,.9)' }}>
+                          <span style={{ fontSize: 14, color: 'rgba(239,231,219,.9)', flex: '1 1 140px' }}>
                             {guestLabel(member)}
                           </span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
                           {rsvp?.status === 'yes' ? (
                             <Pill variant="success">vai</Pill>
                           ) : rsvp?.status === 'no' ? (
@@ -229,7 +265,6 @@ export default async function PresencasPage() {
                           ) : (
                             <Pill variant="muted">aguardando</Pill>
                           )}
-                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                             {rsvp?.status !== 'yes' && (
                               <form action={confirmRsvp}>
                                 <input type="hidden" name="guest_id" value={member.id} />
@@ -246,6 +281,12 @@ export default async function PresencasPage() {
                                 </SubmitButton>
                               </form>
                             )}
+                            <form action={removePerson}>
+                              <input type="hidden" name="guest_id" value={member.id} />
+                              <SubmitButton variant="danger" small>
+                                excluir
+                              </SubmitButton>
+                            </form>
                           </div>
                         </li>
                       );

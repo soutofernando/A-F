@@ -87,6 +87,98 @@ export async function updateConfirmationNames(
   return { ok: true as const, names: clean };
 }
 
+function revalidateGuestLists() {
+  revalidatePath('/admin/presencas');
+  revalidatePath('/admin/confirmacoes');
+  revalidatePath('/admin/convidados');
+  revalidatePath('/admin');
+}
+
+type StoredName = { name?: string; kind?: string };
+
+/** Tira uma pessoa da pré-lista e do cadastro de convidados. */
+export async function deletePresencePerson(guestId: string) {
+  if (!guestId) return { ok: false as const, error: 'Pessoa inválida.' };
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
+
+  const { data: guest, error: guestError } = await supabase
+    .from('guests')
+    .select('id, display_name, full_name')
+    .eq('id', guestId)
+    .maybeSingle();
+  if (guestError) return { ok: false as const, error: guestError.message };
+  if (!guest) return { ok: false as const, error: 'Pessoa não encontrada.' };
+
+  const label = normalizePersonName(guest.full_name || guest.display_name || '');
+  const { data: confirmations, error: listError } = await supabase
+    .from('confirmations')
+    .select('id, names');
+  if (listError) return { ok: false as const, error: listError.message };
+
+  for (const confirmation of confirmations ?? []) {
+    const names = Array.isArray(confirmation.names) ? (confirmation.names as StoredName[]) : [];
+    const next = names.filter((entry) => normalizePersonName(entry.name ?? '') !== label);
+    if (next.length === names.length) continue;
+    if (next.length === 0) {
+      const { error } = await supabase.from('confirmations').delete().eq('id', confirmation.id);
+      if (error) return { ok: false as const, error: error.message };
+    } else {
+      const { error } = await supabase
+        .from('confirmations')
+        .update({ names: next, party_size: next.length })
+        .eq('id', confirmation.id);
+      if (error) return { ok: false as const, error: error.message };
+    }
+  }
+
+  const { error: deleteError } = await supabase.from('guests').delete().eq('id', guestId);
+  if (deleteError) return { ok: false as const, error: deleteError.message };
+  revalidateGuestLists();
+  return { ok: true as const };
+}
+
+/** Apaga a pré-confirmação e todas as pessoas dessa família. */
+export async function deletePresenceFamily(confirmationId: string) {
+  if (!confirmationId) return { ok: false as const, error: 'Família inválida.' };
+  const session = await assertAdminSession();
+  if (!session) return { ok: false as const, error: 'Não autorizado.' };
+  const { supabase } = session;
+
+  const { data: confirmation, error: readError } = await supabase
+    .from('confirmations')
+    .select('id, names')
+    .eq('id', confirmationId)
+    .maybeSingle();
+  if (readError) return { ok: false as const, error: readError.message };
+  if (!confirmation) return { ok: false as const, error: 'Família não encontrada.' };
+
+  const wanted = new Set(
+    (Array.isArray(confirmation.names) ? (confirmation.names as StoredName[]) : [])
+      .map((entry) => normalizePersonName(entry.name ?? ''))
+      .filter(Boolean),
+  );
+  if (wanted.size > 0) {
+    const { data: guests, error: guestsError } = await supabase
+      .from('guests')
+      .select('id, display_name, full_name');
+    if (guestsError) return { ok: false as const, error: guestsError.message };
+    const ids = (guests ?? [])
+      .filter((guest) => wanted.has(normalizePersonName(guest.full_name || guest.display_name || '')))
+      .map((guest) => guest.id);
+    if (ids.length > 0) {
+      const { error } = await supabase.from('guests').delete().in('id', ids);
+      if (error) return { ok: false as const, error: error.message };
+    }
+  }
+
+  const { error } = await supabase.from('confirmations').delete().eq('id', confirmationId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidateGuestLists();
+  return { ok: true as const };
+}
+
 function normalizePersonName(value: string) {
   return value
     .normalize('NFD')
