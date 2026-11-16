@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic';
 
 const CARDS: Array<{ href: string; title: string; desc: string; kicker: string }> = [
   { href: '/admin/convidados', kicker: '01', title: 'Convidados', desc: 'Liste, edite e organize por mesa.' },
-  { href: '/admin/presentes', kicker: '02', title: 'Presentes', desc: 'Itens, categorias e formas de pagamento.' },
-  { href: '/admin/imagens', kicker: '03', title: 'Imagens', desc: 'Suba e organize fotos por contexto.' },
-  { href: '/admin/recados', kicker: '04', title: 'Recados', desc: 'Modere os recados antes de exibi-los.' },
-  { href: '/admin/config', kicker: '05', title: 'Configurações', desc: 'Data, local, PIX e textos do site.' },
+  { href: '/admin/mesas', kicker: '02', title: 'Mapa de mesas', desc: 'Adicione mesas e sente cada convidado.' },
+  { href: '/admin/presentes', kicker: '03', title: 'Presentes', desc: 'Itens, categorias e formas de pagamento.' },
+  { href: '/admin/imagens', kicker: '04', title: 'Imagens', desc: 'Suba e organize fotos por contexto.' },
+  { href: '/admin/recados', kicker: '05', title: 'Recados', desc: 'Modere os recados antes de exibi-los.' },
+  { href: '/admin/config', kicker: '06', title: 'Configurações', desc: 'Data, local, PIX e textos do site.' },
 ];
 
 export default async function AdminHome() {

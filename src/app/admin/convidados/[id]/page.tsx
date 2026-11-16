@@ -46,7 +46,12 @@ export default async function EditGuestPage({ params }: { params: Promise<{ id: 
             <Field label="Nome de exibição" name="display_name" defaultValue={guest.display_name} required />
             <Field label="Nome completo" name="full_name" defaultValue={guest.full_name} />
             <Field label="Grupo" name="group_name" defaultValue={guest.group_name} />
-            <Field label="Mesa" name="table_name" defaultValue={guest.table_name} />
+            <Field
+              label="Mesa"
+              name="table_name"
+              defaultValue={guest.table_name}
+              hint="Salvar o mapa de mesas atualiza este nome."
+            />
             <Field
               label="Máx. de acompanhantes"
               name="max_companions"

@@ -11,6 +11,7 @@ const NAV: Array<[string, string]> = [
   ['/admin/presencas', 'Presenças'],
   ['/admin/confirmacoes', 'Pré-confirmação'],
   ['/admin/convidados', 'Convidados'],
+  ['/admin/mesas', 'Mapa de mesas'],
   ['/admin/presentes', 'Presentes'],
   ['/admin/cha-de-panela', 'Chá de panela'],
   ['/admin/imagens', 'Imagens'],
@@ -32,11 +33,13 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0E0B09', color: 'var(--cream)', display: 'flex' }}>
+    <div className="admin-shell" style={{ minHeight: '100vh', background: '#0E0B09', color: 'var(--cream)', display: 'flex' }}>
       {/* Sidebar */}
       <aside
+        className="admin-sidebar"
         style={{
           width: 260,
+          flexShrink: 0,
           background: '#141110',
           borderRight: '1px solid rgba(239,231,219,.08)',
           padding: '28px 20px',
@@ -106,7 +109,7 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '40px 48px 80px', maxWidth: '100%' }}>{children}</main>
+      <main className="admin-main" style={{ flex: 1, minWidth: 0, overflowY: 'auto', overflowX: 'hidden', padding: '40px 48px 80px' }}>{children}</main>
     </div>
   );
 }

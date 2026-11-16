@@ -142,7 +142,12 @@ export default async function ConvidadosPage() {
             <Field label="Nome de exibição" name="display_name" required placeholder="Maria" />
             <Field label="Nome completo" name="full_name" placeholder="Maria Silva (opcional)" />
             <Field label="Grupo" name="group_name" placeholder="Família, Amigos…" />
-            <Field label="Mesa" name="table_name" placeholder="Mesa 4" />
+            <Field
+              label="Mesa"
+              name="table_name"
+              placeholder="Mesa 4"
+              hint="O mapa de mesas é quem guarda a disposição. Este campo entra na coluna com o mesmo nome."
+            />
             <Field
               label="Máx. de acompanhantes"
               name="max_companions"
