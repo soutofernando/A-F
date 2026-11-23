@@ -9,6 +9,7 @@ import { Logo } from '@/components/Logo';
 const NAV: Array<[string, string]> = [
   ['/admin', 'Visão geral'],
   ['/admin/presencas', 'Presenças'],
+  ['/admin/entrada', 'Entrada'],
   ['/admin/confirmacoes', 'Pré-confirmação'],
   ['/admin/convidados', 'Convidados'],
   ['/admin/mesas', 'Mapa de mesas'],
@@ -24,6 +25,8 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  const door = pathname === '/admin/entrada';
+
   const logout = async () => {
     setLoggingOut(true);
     const supabase = createClient();
@@ -31,6 +34,14 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
     router.replace('/admin/login');
     router.refresh();
   };
+
+  if (door) {
+    return (
+      <div className="admin-shell" style={{ minHeight: '100dvh', background: '#0E0B09', color: 'var(--cream)' }}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="admin-shell" style={{ minHeight: '100vh', background: '#0E0B09', color: 'var(--cream)', display: 'flex' }}>

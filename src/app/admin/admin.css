@@ -838,3 +838,19 @@
     color: #8b6d38;
   }
 }
+
+.entry-reader {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #000;
+}
+
+.entry-reader video {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover;
+  border-radius: 18px;
+}

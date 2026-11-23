@@ -16,6 +16,8 @@ import {
   type RsvpRow,
 } from '@/lib/admin/presence-parties';
 import { FamilyWhatsappField } from '@/components/admin/FamilyWhatsappField';
+import { EntryQrDownload } from '@/components/admin/EntryQrDownload';
+import { loadEntryPassCards } from '@/lib/admin/entry-passes';
 import {
   Card,
   PageHeader,
@@ -94,6 +96,11 @@ export default async function PresencasPage() {
 
   const partiesWithActivity = parties.filter((party) =>
     party.members.some((m) => rsvpByGuest.has(m.id)),
+  );
+
+  const passes = await loadEntryPassCards(supabase);
+  const tokenByGuest = new Map(
+    passes.ok ? passes.cards.map((card) => [card.guestId, card.token] as const) : [],
   );
 
   const showResetHint = stats.yes > 50;
@@ -243,6 +250,7 @@ export default async function PresencasPage() {
                   <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
                     {party.members.map((member) => {
                       const rsvp = rsvpByGuest.get(member.id);
+                      const qrToken = rsvp?.status === 'yes' ? tokenByGuest.get(member.id) : undefined;
                       return (
                         <li
                           key={member.id}
@@ -254,8 +262,19 @@ export default async function PresencasPage() {
                             gap: 8,
                           }}
                         >
-                          <span style={{ fontSize: 14, color: 'rgba(239,231,219,.9)', flex: '1 1 140px' }}>
+                          <span
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: 10,
+                              fontSize: 14,
+                              color: 'rgba(239,231,219,.9)',
+                              flex: '1 1 220px',
+                            }}
+                          >
                             {guestLabel(member)}
+                            {qrToken ? <EntryQrDownload name={guestLabel(member)} token={qrToken} /> : null}
                           </span>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
                           {rsvp?.status === 'yes' ? (
