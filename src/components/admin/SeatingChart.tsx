@@ -344,12 +344,10 @@ export function SeatingChart({
       ? 'Salvando…'
       : saveState === 'pending'
         ? 'Salvando em instantes…'
-        : saveState === 'saved'
+        : saveState === 'saved' && tables.length > 0
           ? 'Mapa salvo'
-        : saveState === 'error'
-          ? 'Não salvou'
-          : saveState === 'saved' && tables.length > 0
-            ? 'Mapa salvo'
+          : saveState === 'error'
+            ? 'Não salvou'
             : '';
 
   const printTables = tables
