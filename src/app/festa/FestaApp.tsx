@@ -475,7 +475,7 @@ export function FestaApp({
             </div>
             <p className="festa-count">{galleryCount(visible)}</p>
             {visible.length === 0 ? (
-              <p className="festa-note" style={{ paddingLeft: 22 }}>As fotos da noite aparecem aqui.</p>
+              <p className="festa-note">As fotos da noite aparecem aqui.</p>
             ) : (
               <div className="festa-grid">
                 {visible.map((item) => (

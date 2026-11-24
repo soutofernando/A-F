@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { HERO_IMAGE } from '@/lib/site';
 
+const INK = '#173B66';
+const GOLD = '#8B6D38';
+const CREAM = '#F8F5EE';
+const BAND = '#EFE6D6';
+
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -12,95 +17,136 @@ function loadImage(src: string) {
   });
 }
 
+async function renderPoster(url: string) {
+  const QRCode = (await import('qrcode')).default;
+  const dataUrl = await QRCode.toDataURL(url, {
+    errorCorrectionLevel: 'H',
+    margin: 1,
+    width: 900,
+    color: { dark: INK, light: '#ffffff' },
+  });
+  const [qr, mark, church] = await Promise.all([
+    loadImage(dataUrl),
+    loadImage('/AeF.png').catch(() => null),
+    loadImage(HERO_IMAGE).catch(() => null),
+  ]);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 2040;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  const center = canvas.width / 2;
+
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center';
+
+  if (church) {
+    const height = 520;
+    const width = church.width * (height / church.height);
+    ctx.drawImage(church, (canvas.width - width) / 2, 0, width, height);
+    const fade = ctx.createLinearGradient(0, 340, 0, 560);
+    fade.addColorStop(0, 'rgba(248,245,238,0)');
+    fade.addColorStop(1, CREAM);
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 340, canvas.width, 220);
+  }
+
+  let y = church ? 500 : 90;
+  if (mark) {
+    const height = 78;
+    const width = height * (mark.width / mark.height);
+    ctx.drawImage(mark, (canvas.width - width) / 2, y, width, height);
+    y += height + 36;
+  }
+
+  ctx.fillStyle = INK;
+  ctx.font = 'italic 62px Georgia, "Times New Roman", serif';
+  ctx.fillText('desafios da festa', center, y + 48);
+  y += 110;
+
+  ctx.font = 'italic 46px Georgia, "Times New Roman", serif';
+  for (const line of ['Aponte a câmera para o código.', 'Tire a foto de cada desafio.']) {
+    ctx.fillText(line, center, y);
+    y += 64;
+  }
+
+  ctx.fillStyle = GOLD;
+  ctx.font = 'italic 52px Georgia, "Times New Roman", serif';
+  ctx.fillText('Cada foto publicada vale 1 ponto.', center, y + 8);
+  y += 78;
+
+  ctx.fillStyle = INK;
+  ctx.font = 'italic 36px Georgia, "Times New Roman", serif';
+  ctx.fillText('O ranking muda na hora.', center, y);
+  y += 48;
+
+  const qrSize = 500;
+  const qx = (canvas.width - qrSize) / 2;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(qx - 24, y, qrSize + 48, qrSize + 48);
+  ctx.drawImage(qr, qx, y + 24, qrSize, qrSize);
+  y += qrSize + 88;
+
+  ctx.fillStyle = BAND;
+  ctx.fillRect(0, y, canvas.width, canvas.height - y);
+  y += 78;
+  ctx.fillStyle = INK;
+  ctx.font = 'italic 48px Georgia, "Times New Roman", serif';
+  ctx.fillText('Coloque também as fotos', center, y);
+  y += 62;
+  ctx.fillText('e os vídeos da festa.', center, y);
+  y += 70;
+  ctx.font = 'italic 34px Georgia, "Times New Roman", serif';
+  ctx.fillStyle = GOLD;
+  ctx.fillText('A galeria é de todo mundo.', center, y);
+  y += 64;
+  ctx.fillStyle = '#52677D';
+  ctx.font = '24px Georgia, "Times New Roman", serif';
+  ctx.fillText(url.replace(/^https?:\/\//, ''), center, y);
+
+  const final = document.createElement('canvas');
+  final.width = canvas.width;
+  final.height = Math.ceil(y + 72);
+  final.getContext('2d')?.drawImage(canvas, 0, 0);
+  return final.toDataURL('image/png');
+}
+
 export function FestaQrCard({ url }: { url: string }) {
   const [src, setSrc] = useState('');
 
   useEffect(() => {
     let cancel = false;
-    import('qrcode').then((QR) =>
-      QR.default.toDataURL(url, {
-        errorCorrectionLevel: 'H',
-        margin: 1,
-        width: 640,
-        color: { dark: '#173B66', light: '#ffffff' },
-      }),
-    ).then((data) => {
-      if (!cancel) setSrc(data);
+    renderPoster(url).then((data) => {
+      if (!cancel && data) setSrc(data);
     }).catch(() => undefined);
     return () => {
       cancel = true;
     };
   }, [url]);
 
-  const download = async () => {
+  const download = () => {
     if (!src) return;
-    const QRCode = (await import('qrcode')).default;
-    const dataUrl = await QRCode.toDataURL(url, {
-      errorCorrectionLevel: 'H',
-      margin: 1,
-      width: 900,
-      color: { dark: '#173B66', light: '#ffffff' },
-    });
-    const [qr, mark] = await Promise.all([loadImage(dataUrl), loadImage('/AeF.png').catch(() => null)]);
-    const church = await loadImage(HERO_IMAGE).catch(() => null);
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1620;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.fillStyle = '#F8F5EE';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (church) {
-      const height = 620;
-      const width = church.width * (height / church.height);
-      ctx.drawImage(church, (canvas.width - width) / 2, 0, width, height);
-      const fade = ctx.createLinearGradient(0, 460, 0, 680);
-      fade.addColorStop(0, 'rgba(248,245,238,0)');
-      fade.addColorStop(1, '#F8F5EE');
-      ctx.fillStyle = fade;
-      ctx.fillRect(0, 460, canvas.width, 220);
-    }
-    if (mark) {
-      const height = 92;
-      const width = height * (mark.width / mark.height);
-      ctx.drawImage(mark, (canvas.width - width) / 2, church ? 560 : 80, width, height);
-    }
-    ctx.fillStyle = '#173B66';
-    ctx.textAlign = 'center';
-    ctx.font = 'italic 64px Georgia, "Times New Roman", serif';
-    ctx.fillText('desafios da festa', canvas.width / 2, church ? 730 : 250);
-    const qrSize = 620;
-    const qx = (canvas.width - qrSize) / 2;
-    const qy = church ? 780 : 320;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(qx - 28, qy - 28, qrSize + 56, qrSize + 56);
-    ctx.drawImage(qr, qx, qy, qrSize, qrSize);
-    ctx.fillStyle = '#173B66';
-    ctx.font = 'italic 36px Georgia, "Times New Roman", serif';
-    ctx.fillText('cada foto vale 1 ponto', canvas.width / 2, qy + qrSize + 90);
-    ctx.fillStyle = '#52677D';
-    ctx.font = '24px Georgia, "Times New Roman", serif';
-    ctx.fillText(url.replace(/^https?:\/\//, ''), canvas.width / 2, qy + qrSize + 140);
     const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
+    link.href = src;
     link.download = 'qr-desafios-da-festa.png';
     link.click();
   };
 
   return (
     <div style={{ display: 'grid', gap: 16, justifyItems: 'start' }}>
-      <div style={{ background: '#fff', padding: 12 }}>
-        {src ? (
-          <img src={src} alt={`QR code para ${url}`} width={220} height={220} />
-        ) : (
-          <div style={{ width: 220, height: 220 }} />
-        )}
-      </div>
+      {src ? (
+        <img src={src} alt="Cartaz dos desafios da festa" style={{ width: 'min(100%, 360px)', height: 'auto', background: CREAM }} />
+      ) : (
+        <div style={{ width: 220, height: 320 }} />
+      )}
       <a href={url} style={{ color: 'var(--gold-soft)', fontSize: 14 }}>{url}</a>
       <button
         type="button"
         className="admin-btn admin-btn-gold"
-        onClick={() => void download()}
+        onClick={download}
+        disabled={!src}
         style={{
           background: 'transparent',
           border: '1px solid var(--gold-soft)',

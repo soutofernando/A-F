@@ -12,6 +12,8 @@ export function originFrom(headerList: HeaderList) {
 
 export function festaPageUrl(origin: string) {
   const configured = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '');
-  const base = configured && !/localhost|127\.0\.0\.1/.test(configured) ? configured : origin;
-  return `${base}/festa`;
+  const local = (value: string) => !value || /localhost|127\.0\.0\.1/.test(value);
+  if (!local(configured)) return `${configured}/festa`;
+  if (!local(origin)) return `${origin}/festa`;
+  return 'https://alicia-fernando.vercel.app/festa';
 }
