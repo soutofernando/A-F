@@ -1,0 +1,553 @@
+.festa {
+  min-height: 100dvh;
+  background: #F8F5EE;
+  color: #173B66;
+  color-scheme: light;
+}
+
+.festa button {
+  border: 0;
+  cursor: pointer;
+}
+
+.festa button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
+.festa-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.festa-frame {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+.festa-door {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 0 48px;
+}
+
+.festa-door h1,
+.festa-mission h2,
+.festa-loose h2,
+.festa-lead-name,
+.festa-who {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.festa-door h1 {
+  font-size: clamp(40px, 10vw, 52px);
+  line-height: 0.95;
+  margin: 28px 0 22px;
+  max-width: 16ch;
+}
+
+.festa-label {
+  display: block;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.festa-input {
+  width: 100%;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #173B66;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #173B66;
+  border-radius: 0;
+  padding: 6px 0 10px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.festa-input::placeholder {
+  color: #B7C3D1;
+}
+
+.festa-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  padding: 14px 22px;
+  min-height: 48px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-radius: 999px;
+  background: #244A73;
+  color: #fff;
+}
+
+.festa-go:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.festa-door .festa-go,
+.festa-loose .festa-go {
+  width: 100%;
+}
+
+.festa-gallery-bar .festa-go {
+  width: min(100%, 340px);
+}
+
+.festa-note {
+  margin-top: 18px;
+  max-width: 34ch;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #52677D;
+}
+
+.festa-text {
+  margin-top: 22px;
+  background: transparent;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 18px;
+  color: #173B66;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.festa-error {
+  margin-top: 10px;
+  color: #8C3A3A;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.festa-app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.festa-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: rgba(248, 245, 238, 0.94);
+  backdrop-filter: blur(8px);
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
+
+.festa-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.festa-who {
+  font-size: 32px;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+
+.festa-progress,
+.festa-live {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+}
+
+.festa-progress {
+  margin-top: 4px;
+  font-size: 18px;
+  color: #8B6D38;
+}
+
+.festa-live {
+  margin-top: 10px;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.festa-head .festa-text {
+  margin-top: 0;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.festa-scroll {
+  flex: 1;
+}
+
+.festa-list,
+.festa-rank {
+  list-style: none;
+}
+
+.festa-mission {
+  display: grid;
+  gap: 14px;
+  padding: 22px 0;
+  border-top: 1px solid #D5DCE6;
+}
+
+.festa-mission:first-child {
+  border-top: 0;
+}
+
+.festa-mission.is-done {
+  grid-template-columns: 76px 1fr;
+  align-items: center;
+}
+
+.festa-mission h2 {
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.festa-mission p,
+.festa-loose p {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #52677D;
+}
+
+.festa-point {
+  margin-top: 6px;
+  color: #8B6D38;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 20px;
+}
+
+.festa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 14px;
+}
+
+.festa-actions .festa-go {
+  margin-top: 0;
+}
+
+.festa-actions .festa-text {
+  margin-top: 0;
+}
+
+.festa-shot {
+  width: 76px;
+  height: 96px;
+  background: #E7E1D6;
+  overflow: hidden;
+}
+
+.festa-shot img,
+.festa-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.festa-fallback {
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.festa-loose {
+  padding: 8px 0 36px;
+  border-top: 1px solid #D5DCE6;
+}
+
+.festa-loose h2 {
+  font-size: 32px;
+  line-height: 1;
+  margin-top: 22px;
+}
+
+.festa-tabs {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: rgba(248, 245, 238, 0.96);
+  border-top: 1px solid #D5DCE6;
+}
+
+.festa-tabs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.festa-tab {
+  min-height: 56px;
+  padding: 14px 8px calc(14px + env(safe-area-inset-bottom));
+  background: transparent;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 15px;
+  color: #52677D;
+}
+
+.festa-tab[aria-selected="true"] {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  color: #173B66;
+}
+
+.festa-gallery {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+}
+
+.festa-gallery-bar {
+  padding: 8px 22px 16px;
+}
+
+.festa-filters {
+  display: flex;
+  gap: 18px;
+  padding: 0 22px 14px;
+}
+
+.festa-filters button {
+  background: transparent;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 15px;
+  color: #52677D;
+}
+
+.festa-filters button[aria-pressed="true"] {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  color: #173B66;
+}
+
+.festa-count {
+  padding: 0 22px 12px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+}
+
+.festa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+
+.festa-cell {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  background: #E4DDD2;
+  overflow: hidden;
+}
+
+.festa-cell img,
+.festa-cell video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.festa-cell span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  color: #F8F5EE;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 16px;
+  text-shadow: 0 1px 8px rgba(18, 38, 63, 0.7);
+}
+
+.festa-rank {
+  padding-bottom: 28px;
+}
+
+.festa-rank li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px solid #D5DCE6;
+}
+
+.festa-rank li.is-lead {
+  display: block;
+  border-top: 0;
+  padding-top: 8px;
+  padding-bottom: 18px;
+}
+
+.festa-rank li.is-me:not(.is-lead) {
+  box-shadow: inset 2px 0 0 #8B6D38;
+  padding-left: 12px;
+}
+
+.festa-lead-score {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 84px;
+  line-height: 0.85;
+  font-weight: 400;
+}
+
+.festa-lead-name {
+  margin-top: 6px;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.festa-you {
+  display: inline;
+  margin-left: 8px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  color: #8B6D38;
+}
+
+.festa-place {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 22px;
+}
+
+.festa-rank-name {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.festa-rank-points {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 18px;
+  color: #8B6D38;
+}
+
+.festa-view {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #12263F;
+  color: #F8F5EE;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+}
+
+.festa-view-bar,
+.festa-view-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.festa-view button {
+  background: transparent;
+  color: #F8F5EE;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 20px;
+  min-height: 44px;
+}
+
+.festa-view figure {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+  gap: 14px;
+}
+
+.festa-view img,
+.festa-view video,
+.festa-view iframe {
+  max-width: 100%;
+  max-height: calc(100dvh - 190px);
+  object-fit: contain;
+}
+
+.festa-view iframe {
+  width: min(100%, 960px);
+  height: min(70dvh, 640px);
+  border: 0;
+  background: #111;
+}
+
+.festa-view figcaption {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.festa-view figcaption small {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-style: normal;
+  font-size: 14px;
+  color: rgba(248, 245, 238, 0.75);
+}
+
+.festa-rename {
+  margin-top: 12px;
+}
+
+.festa-rename .festa-go {
+  width: auto;
+}
+
+@media (min-width: 720px) {
+  .festa-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .festa-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .festa-head {
+    backdrop-filter: none;
+  }
+}

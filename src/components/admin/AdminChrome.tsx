@@ -16,6 +16,7 @@ const NAV: Array<[string, string]> = [
   ['/admin/presentes', 'Presentes'],
   ['/admin/cha-de-panela', 'Chá de panela'],
   ['/admin/imagens', 'Imagens'],
+  ['/admin/festa', 'Festa'],
   ['/admin/recados', 'Recados'],
   ['/admin/config', 'Configurações'],
 ];
@@ -65,7 +66,7 @@ export function AdminChrome({ children, email }: { children: ReactNode; email: s
           </div>
         </Link>
 
-        <nav style={{ marginTop: 36, flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <nav style={{ marginTop: 36, flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           {NAV.map(([href, label]) => {
             const active = href === '/admin' ? pathname === '/admin' : pathname?.startsWith(href);
             return (

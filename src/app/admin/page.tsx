@@ -9,8 +9,9 @@ const CARDS: Array<{ href: string; title: string; desc: string; kicker: string }
   { href: '/admin/mesas', kicker: '02', title: 'Mapa de mesas', desc: 'Adicione mesas e sente cada convidado.' },
   { href: '/admin/presentes', kicker: '03', title: 'Presentes', desc: 'Itens, categorias e formas de pagamento.' },
   { href: '/admin/imagens', kicker: '04', title: 'Imagens', desc: 'Suba e organize fotos por contexto.' },
-  { href: '/admin/recados', kicker: '05', title: 'Recados', desc: 'Modere os recados antes de exibi-los.' },
-  { href: '/admin/config', kicker: '06', title: 'Configurações', desc: 'Data, local, PIX e textos do site.' },
+  { href: '/admin/festa', kicker: '05', title: 'Festa', desc: 'Desafios, ranking e a galeria dos convidados.' },
+  { href: '/admin/recados', kicker: '06', title: 'Recados', desc: 'Modere os recados antes de exibi-los.' },
+  { href: '/admin/config', kicker: '07', title: 'Configurações', desc: 'Data, local, PIX e textos do site.' },
 ];
 
 export default async function AdminHome() {
