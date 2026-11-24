@@ -9,6 +9,7 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 type TokenCache = { key: string; token: string; until: number; mode: 'oauth' | 'service' };
 let tokenCache: TokenCache | null = null;
 const folderCache = new Map<string, string>();
+let rootReady: { id: string; until: number } | null = null;
 
 export type DriveStatus = {
   mode: 'oauth' | 'service' | 'off';
@@ -267,7 +268,11 @@ async function childFolder(token: string, parent: string, name: string) {
 
 async function rootFolder(token: string, mode: 'oauth' | 'service') {
   const folderId = wantedFolderId();
-  if (await folderAlive(token, folderId)) return folderId;
+  if (rootReady?.id === folderId && rootReady.until > Date.now()) return folderId;
+  if (await folderAlive(token, folderId)) {
+    rootReady = { id: folderId, until: Date.now() + 10 * 60 * 1000 };
+    return folderId;
+  }
   if (mode === 'service') {
     throw new Error('A pasta do Drive não está acessível para a conta de serviço.');
   }
@@ -493,6 +498,7 @@ export async function connectDriveFromCode(code: string, origin: string) {
   if (error) return { error: 'token' as const };
   tokenCache = null;
   folderCache.clear();
+  rootReady = null;
   return { error: null };
 }
 
@@ -505,4 +511,5 @@ export async function disconnectDrive() {
   }).eq('id', 1);
   tokenCache = null;
   folderCache.clear();
+  rootReady = null;
 }

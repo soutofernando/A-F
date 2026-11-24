@@ -3,28 +3,33 @@ import type { FestaFeedItem } from '@/lib/festa/types';
 
 export class FestaUploadError extends Error {}
 
+const PHOTO_EDGE = 1600;
+
 async function shrinkImage(file: File) {
   const media = mediaFromFile(file);
   if (!media || media.mediaType !== 'image') return file;
-  if (media.ext === 'gif' || media.ext === 'heic' || media.ext === 'heif') return file;
-  if (file.size < 900_000) return namedFile(file, media);
+  if (media.ext === 'gif') return file;
+  if (file.size < 450_000 && (media.ext === 'jpg' || media.ext === 'webp')) return namedFile(file, media);
   try {
-    const bitmap = await createImageBitmap(file);
-    const max = 2000;
-    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const bitmap = await createImageBitmap(file, {
+      resizeWidth: PHOTO_EDGE,
+      resizeQuality: 'medium',
+    });
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const scale = longest > PHOTO_EDGE ? PHOTO_EDGE / longest : 1;
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) {
       bitmap.close();
       return namedFile(file, media);
     }
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.76));
     if (!blob || blob.size >= file.size) return namedFile(file, media);
     return new File([blob], 'foto.jpg', { type: 'image/jpeg' });
   } catch {
@@ -47,10 +52,11 @@ export async function sendFestaMedia(input: {
   file: File;
   kind: 'challenge' | 'gallery';
   challengeId?: string | null;
+  onPhase?: (phase: 'prepare' | 'send' | 'save') => void;
 }) {
-  const file = input.kind === 'gallery' && input.file.type.startsWith('video/')
-    ? input.file
-    : await shrinkImage(input.file);
+  const video = input.kind === 'gallery' && input.file.type.startsWith('video/');
+  input.onPhase?.('prepare');
+  const file = video ? input.file : await shrinkImage(input.file);
   const media = mediaFromFile(file);
   if (!media) {
     throw new FestaUploadError('Use uma foto JPG, PNG ou WEBP, ou um vídeo MP4 ou MOV.');
@@ -72,6 +78,7 @@ export async function sendFestaMedia(input: {
     if (!prepared.ok) throw new FestaUploadError(await readError(prepared));
     const ticket = await prepared.json() as { uploadUrl: string; contentType: string };
     const contentType = ticket.contentType || named.type;
+    input.onPhase?.('send');
     const uploaded = await fetch(ticket.uploadUrl, {
       method: 'PUT',
       headers: {
@@ -84,6 +91,7 @@ export async function sendFestaMedia(input: {
     const saved = await uploaded.json().catch(() => null) as { id?: string } | null;
     if (!saved?.id) throw new FestaUploadError('A foto não chegou ao Drive. Tente outra vez.');
 
+    input.onPhase?.('save');
     const committed = await fetch('/api/festa/commit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

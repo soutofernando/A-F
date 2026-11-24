@@ -88,6 +88,10 @@ export function FestaApp({
   const [joinError, setJoinError] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [uploadAt, setUploadAt] = useState('');
+  const [phase, setPhase] = useState<'prepare' | 'send' | 'save' | ''>('');
+  const [picking, setPicking] = useState(false);
+  const [sent, setSent] = useState<{ text: string; preview: string | null } | null>(null);
+  const [localShots, setLocalShots] = useState<Record<string, string>>({});
   const [renaming, setRenaming] = useState(false);
   const [needName, setNeedName] = useState(false);
   const [viewerId, setViewerId] = useState<string | null>(null);
@@ -95,7 +99,9 @@ export function FestaApp({
   const challengeTarget = useRef<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
+  const galleryCameraRef = useRef<HTMLInputElement>(null);
+  const galleryLibraryRef = useRef<HTMLInputElement>(null);
+  const galleryVideoRef = useRef<HTMLInputElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -229,8 +235,11 @@ export function FestaApp({
       return;
     }
     setUploadError('');
+    setSent(null);
+    setPicking(false);
     setUploadAt(challengeId ?? 'gallery');
     setBusy(challengeId ?? 'gallery');
+    const previews: string[] = [];
     try {
       for (let index = 0; index < files.length; index += 1) {
         setBusy(files.length > 1 ? `${index + 1}/${files.length}` : (challengeId ?? 'gallery'));
@@ -239,8 +248,21 @@ export function FestaApp({
           file: files[index],
           kind,
           challengeId,
+          onPhase: setPhase,
         });
+        if (!isVideoFile(files[index])) {
+          const preview = URL.createObjectURL(files[index]);
+          previews.push(preview);
+          setLocalShots((current) => ({ ...current, [item.id]: preview }));
+        }
         remember(item);
+      }
+      if (kind === 'gallery') {
+        const video = files.every(isVideoFile);
+        const text = files.length === 1
+          ? (video ? 'Vídeo enviado.' : 'Foto enviada.')
+          : `${files.length} arquivos enviados.`;
+        setSent({ text, preview: previews[0] ?? null });
       }
     } catch (caught) {
       if (caught instanceof FestaUploadError && caught.message.includes('Entre de novo')) {
@@ -250,6 +272,7 @@ export function FestaApp({
       setUploadError(caught instanceof Error ? caught.message : 'Não consegui enviar. Tente outra vez.');
     } finally {
       setBusy('');
+      setPhase('');
     }
   };
 
@@ -274,7 +297,16 @@ export function FestaApp({
       setTab('galeria');
       return;
     }
-    galleryRef.current?.click();
+    setUploadError('');
+    setPicking(true);
+  };
+
+  const galleryStatus = {
+    error: uploadAt === 'gallery' ? uploadError : '',
+    sent: uploadAt === 'gallery' ? sent : null,
+    busy,
+    phase,
+    picking,
   };
 
   if (!ready) {
@@ -352,7 +384,7 @@ export function FestaApp({
                   <li key={challenge.id} className={shot ? 'festa-mission is-done' : 'festa-mission'}>
                     {shot && (
                       <button type="button" className="festa-shot" onClick={() => setViewerId(shot.id)}>
-                        <Still src={festaImageUrl(shot.drive_file_id, 800)} alt={challenge.title} />
+                        <Still src={localShots[shot.id] ?? festaImageUrl(shot.drive_file_id, 800)} alt={challenge.title} />
                       </button>
                     )}
                     <div>
@@ -394,6 +426,7 @@ export function FestaApp({
                           </button>
                         </div>
                       )}
+                      {busy === challenge.id && <p className="festa-wait" role="status">{phaseText(phase)}</p>}
                       {uploadError && uploadAt === challenge.id && (
                         <p className="festa-error">{uploadError}</p>
                       )}
@@ -408,10 +441,14 @@ export function FestaApp({
               {needName && !player && (
                 <NameForm initial="" submitLabel="Entrar" pending={pending} error={joinError} onSubmit={join} />
               )}
-              <button type="button" className="festa-go" disabled={Boolean(busy)} onClick={openGallery}>
-                {galleryButtonLabel(busy)}
-              </button>
-              {uploadError && uploadAt === 'gallery' && <p className="festa-error">{uploadError}</p>}
+              <GallerySend
+                status={galleryStatus}
+                onOpen={openGallery}
+                onCamera={() => { setPicking(false); galleryCameraRef.current?.click(); }}
+                onLibrary={() => { setPicking(false); galleryLibraryRef.current?.click(); }}
+                onVideo={() => { setPicking(false); galleryVideoRef.current?.click(); }}
+                onClose={() => setPicking(false)}
+              />
             </section>
           </div>
         )}
@@ -457,10 +494,14 @@ export function FestaApp({
               {needName && !player && (
                 <NameForm initial="" submitLabel="Entrar" pending={pending} error={joinError} onSubmit={join} />
               )}
-              <button type="button" className="festa-go" disabled={Boolean(busy)} onClick={openGallery}>
-                {galleryButtonLabel(busy)}
-              </button>
-              {uploadError && uploadAt === 'gallery' && <p className="festa-error">{uploadError}</p>}
+              <GallerySend
+                status={galleryStatus}
+                onOpen={openGallery}
+                onCamera={() => { setPicking(false); galleryCameraRef.current?.click(); }}
+                onLibrary={() => { setPicking(false); galleryLibraryRef.current?.click(); }}
+                onVideo={() => { setPicking(false); galleryVideoRef.current?.click(); }}
+                onClose={() => setPicking(false)}
+              />
             </div>
             <div className="festa-filters">
               {([
@@ -481,7 +522,7 @@ export function FestaApp({
                 {visible.map((item) => (
                   <button key={item.id} type="button" className="festa-cell" onClick={() => setViewerId(item.id)}>
                     <Still
-                      src={festaImageUrl(item.drive_file_id, 800)}
+                      src={localShots[item.id] ?? festaImageUrl(item.drive_file_id, 800)}
                       alt={item.display_name}
                       video={item.media_type === 'video'}
                     />
@@ -517,7 +558,9 @@ export function FestaApp({
 
       <input ref={cameraRef} className="festa-file" type="file" accept="image/*" capture="environment" onChange={onChallengeFiles} />
       <input ref={libraryRef} className="festa-file" type="file" accept="image/*" onChange={onChallengeFiles} />
-      <input ref={galleryRef} className="festa-file" type="file" accept="image/*,video/*" multiple onChange={onGalleryFiles} />
+      <input ref={galleryCameraRef} className="festa-file" type="file" accept="image/*" capture="environment" onChange={onGalleryFiles} />
+      <input ref={galleryLibraryRef} className="festa-file" type="file" accept="image/*" multiple onChange={onGalleryFiles} />
+      <input ref={galleryVideoRef} className="festa-file" type="file" accept="video/*" multiple onChange={onGalleryFiles} />
 
       {viewer && (
         <div className="festa-view" role="dialog" aria-modal="true" aria-label={viewer.display_name}>
@@ -564,10 +607,66 @@ export function FestaApp({
   );
 }
 
-function galleryButtonLabel(busy: string) {
-  if (busy === 'gallery') return 'Enviando…';
+function isVideoFile(file: File) {
+  return file.type.startsWith('video/') || /\.(mp4|mov|webm)$/i.test(file.name);
+}
+
+function phaseText(phase: string) {
+  if (phase === 'prepare') return 'Preparando a foto…';
+  if (phase === 'save') return 'Guardando na galeria…';
+  return 'Enviando…';
+}
+
+function galleryButtonLabel(busy: string, phase: string) {
   if (busy.includes('/')) return `Enviando ${busy}`;
+  if (busy) return phaseText(phase);
   return 'Enviar para a galeria';
+}
+
+function GallerySend({
+  status,
+  onOpen,
+  onCamera,
+  onLibrary,
+  onVideo,
+  onClose,
+}: {
+  status: {
+    error: string;
+    sent: { text: string; preview: string | null } | null;
+    busy: string;
+    phase: string;
+    picking: boolean;
+  };
+  onOpen: () => void;
+  onCamera: () => void;
+  onLibrary: () => void;
+  onVideo: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="festa-send">
+      {status.picking && !status.busy ? (
+        <div className="festa-pick">
+          <button type="button" className="festa-go" onClick={onCamera}>Tirar agora</button>
+          <button type="button" className="festa-go festa-go-line" onClick={onLibrary}>Escolher uma foto</button>
+          <button type="button" className="festa-text" onClick={onVideo}>Enviar um vídeo</button>
+          <button type="button" className="festa-text" onClick={onClose}>Voltar</button>
+        </div>
+      ) : (
+        <button type="button" className="festa-go" disabled={Boolean(status.busy)} onClick={onOpen}>
+          {galleryButtonLabel(status.busy, status.phase)}
+        </button>
+      )}
+      {status.sent && !status.busy && (
+        <p className="festa-sent" role="status">
+          {status.sent.preview && <img src={status.sent.preview} alt="" />}
+          <span>{status.sent.text}</span>
+        </p>
+      )}
+      {status.error && <p className="festa-error">{status.error}</p>}
+    </div>
+  );
 }
 
 function galleryCount(items: FestaFeedItem[]) {

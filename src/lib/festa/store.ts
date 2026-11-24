@@ -203,13 +203,11 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
     };
   }
 
-  try {
-    await shareDriveFile(fileId);
-  } catch (error) {
+  const sharePromise = shareDriveFile(fileId).catch((error) => {
     console.error('festa drive share', error instanceof Error ? error.message : error);
-  }
+  });
 
-  const { data, error } = await admin
+  const insertPromise = admin
     .from('festa_submissions')
     .insert({
       player_id: player.id,
@@ -224,6 +222,8 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
     })
     .select('id')
     .single();
+
+  const [{ data, error }] = await Promise.all([insertPromise, sharePromise]);
 
   if (error || !data) {
     if (error?.code === '23505' && kind === 'challenge') {
