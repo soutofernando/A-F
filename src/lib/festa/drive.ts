@@ -8,8 +8,32 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 type TokenCache = { key: string; token: string; until: number; mode: 'oauth' | 'service' };
 let tokenCache: TokenCache | null = null;
+let authorizeTask: Promise<{ token: string; mode: 'oauth' | 'service' }> | null = null;
+let readyCache: { ok: boolean; until: number } | null = null;
 const folderCache = new Map<string, string>();
+const folderTasks = new Map<string, Promise<string>>();
+const sharedFolders = new Set<string>();
 let rootReady: { id: string; until: number } | null = null;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function driveFetch(url: string | URL, init?: RequestInit, attempt = 0): Promise<Response> {
+  const res = await fetch(url, init);
+  const retry = res.status === 429 || res.status === 500 || res.status === 503;
+  if (!retry || attempt >= 3) {
+    if (res.status === 401) tokenCache = null;
+    return res;
+  }
+  await res.arrayBuffer().catch(() => undefined);
+  const retryAfter = Number(res.headers.get('retry-after'));
+  const pause = Number.isFinite(retryAfter) && retryAfter > 0
+    ? retryAfter * 1000
+    : 350 * (2 ** attempt) + Math.floor(Math.random() * 250);
+  await wait(Math.min(pause, 4000));
+  return driveFetch(url, init, attempt + 1);
+}
 
 export type DriveStatus = {
   mode: 'oauth' | 'service' | 'off';
@@ -90,8 +114,11 @@ export async function driveStatus(): Promise<DriveStatus> {
 }
 
 export async function driveIsReady() {
+  if (readyCache && readyCache.until > Date.now()) return readyCache.ok;
   const status = await driveStatus();
-  return status.mode !== 'off';
+  const ok = status.mode !== 'off';
+  readyCache = { ok, until: Date.now() + 60_000 };
+  return ok;
 }
 
 function formatGoogleError(body: unknown) {
@@ -101,6 +128,9 @@ function formatGoogleError(body: unknown) {
     ? record.error_description || record.error
     : record.error?.message;
   if (!message) return 'Falha no Google Drive';
+  if (/rate limit|rateLimit|too many requests/i.test(message)) {
+    return 'Muita gente enviando agora. Espere um pouco e tente de novo.';
+  }
   if (/quota/i.test(message)) {
     return 'A conta de serviço não tem espaço no Drive. Conecte o Gmail pelo botão, ou use um Drive compartilhado.';
   }
@@ -139,6 +169,21 @@ function signServiceJwt(email: string, privateKey: string) {
 }
 
 async function authorize(): Promise<{ token: string; mode: 'oauth' | 'service' }> {
+  if (tokenCache && tokenCache.until > Date.now()) {
+    return { token: tokenCache.token, mode: tokenCache.mode };
+  }
+  if (!authorizeTask) {
+    authorizeTask = refreshAccess().finally(() => {
+      authorizeTask = null;
+    });
+  }
+  return authorizeTask;
+}
+
+async function refreshAccess(): Promise<{ token: string; mode: 'oauth' | 'service' }> {
+  if (tokenCache && tokenCache.until > Date.now()) {
+    return { token: tokenCache.token, mode: tokenCache.mode };
+  }
   const row = await settingsRow();
   const refresh = row?.drive_refresh_token || process.env.GOOGLE_DRIVE_REFRESH_TOKEN || '';
   const oauth = oauthEnv();
@@ -149,7 +194,7 @@ async function authorize(): Promise<{ token: string; mode: 'oauth' | 'service' }
     if (tokenCache && tokenCache.key === key && tokenCache.until > now) {
       return { token: tokenCache.token, mode: 'oauth' };
     }
-    const res = await fetch(TOKEN_URL, {
+    const res = await driveFetch(TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -178,7 +223,7 @@ async function authorize(): Promise<{ token: string; mode: 'oauth' | 'service' }
       return { token: tokenCache.token, mode: 'service' };
     }
     const assertion = signServiceJwt(email, privateKey);
-    const res = await fetch(TOKEN_URL, {
+    const res = await driveFetch(TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -213,7 +258,7 @@ async function folderAlive(token: string, id: string) {
   const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}`);
   url.searchParams.set('fields', 'id,trashed');
   url.searchParams.set('supportsAllDrives', 'true');
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await driveFetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (res.status === 404) return false;
   if (!res.ok) return false;
   const json = await res.json().catch(() => null) as { trashed?: boolean } | null;
@@ -221,7 +266,7 @@ async function folderAlive(token: string, id: string) {
 }
 
 async function createFolder(token: string, name: string, parent: string | null) {
-  const res = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id', {
+  const res = await driveFetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -251,7 +296,7 @@ async function findFolder(token: string, parent: string, name: string) {
   url.searchParams.set('pageSize', '1');
   url.searchParams.set('supportsAllDrives', 'true');
   url.searchParams.set('includeItemsFromAllDrives', 'true');
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await driveFetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const json = await readGoogle(res);
   return json.files?.[0]?.id ?? null;
 }
@@ -261,9 +306,48 @@ async function childFolder(token: string, parent: string, name: string) {
   const cacheKey = `${parent}:${clean}`;
   const cached = folderCache.get(cacheKey);
   if (cached) return cached;
-  const id = (await findFolder(token, parent, clean)) ?? (await createFolder(token, clean, parent));
-  folderCache.set(cacheKey, id);
-  return id;
+  const pending = folderTasks.get(cacheKey);
+  if (pending) return pending;
+  const task = (async () => {
+    const id = (await findFolder(token, parent, clean)) ?? (await createFolder(token, clean, parent));
+    folderCache.set(cacheKey, id);
+    return id;
+  })().finally(() => {
+    folderTasks.delete(cacheKey);
+  });
+  folderTasks.set(cacheKey, task);
+  return task;
+}
+
+async function shareAnyone(token: string, fileId: string) {
+  const res = await driveFetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/permissions?supportsAllDrives=true`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+    },
+  );
+  if (res.ok || res.status === 409) return;
+  const text = await res.text();
+  const message = formatGoogleError(safeJson(text));
+  if (/already exists|duplicate/i.test(message)) return;
+  throw new Error(message);
+}
+
+async function ensureShared(token: string, folderId: string) {
+  if (sharedFolders.has(folderId)) return true;
+  try {
+    await shareAnyone(token, folderId);
+    sharedFolders.add(folderId);
+    return true;
+  } catch (error) {
+    console.error('festa drive folder share', error instanceof Error ? error.message : error);
+    return false;
+  }
 }
 
 async function rootFolder(token: string, mode: 'oauth' | 'service') {
@@ -280,7 +364,7 @@ async function rootFolder(token: string, mode: 'oauth' | 'service') {
 }
 
 async function uploadBytes(token: string, parentId: string, name: string, bytes: Buffer, contentType: string) {
-  const start = await fetch(
+  const start = await driveFetch(
     'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,webViewLink',
     {
       method: 'POST',
@@ -298,7 +382,7 @@ async function uploadBytes(token: string, parentId: string, name: string, bytes:
     const text = await start.text();
     throw new Error(formatGoogleError(safeJson(text)));
   }
-  const put = await fetch(session, {
+  const put = await driveFetch(session, {
     method: 'PUT',
     headers: { 'Content-Type': contentType },
     body: new Blob([new Uint8Array(bytes)], { type: contentType }),
@@ -324,7 +408,8 @@ export async function beginDirectUpload(input: {
   for (const folder of input.folders) {
     parent = await childFolder(auth.token, parent, folder);
   }
-  const start = await fetch(
+  const shared = await ensureShared(auth.token, parent);
+  const start = await driveFetch(
     'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
     {
       method: 'POST',
@@ -347,7 +432,7 @@ export async function beginDirectUpload(input: {
     const text = await start.text();
     throw new Error(formatGoogleError(safeJson(text)));
   }
-  return { uploadUrl };
+  return { uploadUrl, shared };
 }
 
 export type DriveReceipt = {
@@ -360,44 +445,38 @@ export type DriveReceipt = {
 
 export async function readDriveFile(fileId: string): Promise<DriveReceipt | null> {
   const auth = await authorize();
-  const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
-  url.searchParams.set('fields', 'id,size,mimeType,appProperties,webViewLink');
-  url.searchParams.set('supportsAllDrives', 'true');
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } });
-  if (res.status === 404) return null;
-  const json = await readGoogle(res) as {
-    id?: string;
-    size?: string;
-    mimeType?: string;
-    appProperties?: Record<string, string>;
-    webViewLink?: string;
-  };
-  if (!json.id) return null;
-  return {
-    id: json.id,
-    size: Number(json.size ?? 0),
-    mimeType: json.mimeType ?? '',
-    appProperties: json.appProperties ?? {},
-    webViewLink: json.webViewLink || `https://drive.google.com/file/d/${json.id}/view`,
-  };
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
+    url.searchParams.set('fields', 'id,size,mimeType,appProperties,webViewLink');
+    url.searchParams.set('supportsAllDrives', 'true');
+    const res = await driveFetch(url, { headers: { Authorization: `Bearer ${auth.token}` } });
+    if (res.status === 404 && attempt < 2) {
+      await wait(400 * (attempt + 1));
+      continue;
+    }
+    if (res.status === 404) return null;
+    const json = await readGoogle(res) as {
+      id?: string;
+      size?: string;
+      mimeType?: string;
+      appProperties?: Record<string, string>;
+      webViewLink?: string;
+    };
+    if (!json.id) return null;
+    return {
+      id: json.id,
+      size: Number(json.size ?? 0),
+      mimeType: json.mimeType ?? '',
+      appProperties: json.appProperties ?? {},
+      webViewLink: json.webViewLink || `https://drive.google.com/file/d/${json.id}/view`,
+    };
+  }
+  return null;
 }
 
 export async function shareDriveFile(fileId: string) {
   const auth = await authorize();
-  const res = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/permissions?supportsAllDrives=true`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${auth.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-    },
-  );
-  if (res.ok || res.status === 409) return;
-  const text = await res.text();
-  throw new Error(formatGoogleError(safeJson(text)));
+  await shareAnyone(auth.token, fileId);
 }
 
 function safeJson(text: string) {
@@ -425,7 +504,7 @@ export async function uploadToDrive(input: {
 export async function deleteDriveFile(fileId: string) {
   if (!(await driveIsReady())) return;
   const auth = await authorize();
-  const res = await fetch(
+  const res = await driveFetch(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?supportsAllDrives=true`,
     { method: 'DELETE', headers: { Authorization: `Bearer ${auth.token}` } },
   );
@@ -497,7 +576,10 @@ export async function connectDriveFromCode(code: string, origin: string) {
   });
   if (error) return { error: 'token' as const };
   tokenCache = null;
+  readyCache = null;
   folderCache.clear();
+  folderTasks.clear();
+  sharedFolders.clear();
   rootReady = null;
   return { error: null };
 }
@@ -510,6 +592,9 @@ export async function disconnectDrive() {
     updated_at: new Date().toISOString(),
   }).eq('id', 1);
   tokenCache = null;
+  readyCache = null;
   folderCache.clear();
+  folderTasks.clear();
+  sharedFolders.clear();
   rootReady = null;
 }

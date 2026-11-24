@@ -70,7 +70,7 @@ export async function joinPlayer(body: unknown): Promise<
 }
 
 export async function prepareUpload(body: unknown, origin: string): Promise<
-  { uploadUrl: string; contentType: string } | Fail
+  { uploadUrl: string; contentType: string; shared: boolean } | Fail
 > {
   const record = asRecord(body);
   const token = cleanToken(record.token);
@@ -143,16 +143,34 @@ export async function prepareUpload(body: unknown, origin: string): Promise<
         challenge: kind === 'challenge' ? challengeId : '-',
       },
     });
-    return { uploadUrl: session.uploadUrl, contentType: media.contentType };
+    return { uploadUrl: session.uploadUrl, contentType: media.contentType, shared: session.shared };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Não consegui abrir o Drive.';
     return { error: message.slice(0, 300), status: 502 };
   }
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function feedItem(admin: Admin, id: string) {
-  const { data } = await admin.from('festa_feed').select(FEED_COLUMNS).eq('id', id).maybeSingle();
-  return data as FestaFeedItem | null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const { data } = await admin.from('festa_feed').select(FEED_COLUMNS).eq('id', id).maybeSingle();
+    if (data) return data as FestaFeedItem;
+    await wait(200 * (attempt + 1));
+  }
+  return null;
+}
+
+async function feedItemByFile(admin: Admin, fileId: string) {
+  const { data } = await admin
+    .from('festa_submissions')
+    .select('id')
+    .eq('drive_file_id', fileId)
+    .maybeSingle();
+  if (!data?.id) return null;
+  return feedItem(admin, data.id);
 }
 
 function isDriveId(value: string) {
@@ -203,9 +221,12 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
     };
   }
 
-  const sharePromise = shareDriveFile(fileId).catch((error) => {
-    console.error('festa drive share', error instanceof Error ? error.message : error);
-  });
+  const folderShared = record.folderShared === true;
+  const sharePromise = folderShared
+    ? Promise.resolve()
+    : shareDriveFile(fileId).catch((error) => {
+      console.error('festa drive share', error instanceof Error ? error.message : error);
+    });
 
   const insertPromise = admin
     .from('festa_submissions')
@@ -226,6 +247,11 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
   const [{ data, error }] = await Promise.all([insertPromise, sharePromise]);
 
   if (error || !data) {
+    const detail = `${error?.message ?? ''} ${error?.details ?? ''}`;
+    if (error?.code === '23505' && detail.includes('drive_file_id')) {
+      const existing = await feedItemByFile(admin, file.id);
+      if (existing) return { item: existing };
+    }
     if (error?.code === '23505' && kind === 'challenge') {
       await deleteDriveFile(fileId).catch(() => undefined);
       return { error: 'Você já ganhou o ponto deste desafio.', status: 409 };
@@ -235,8 +261,21 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
   }
 
   const item = await feedItem(admin, data.id);
-  if (!item) return { error: 'A foto entrou no Drive, mas o ranking ainda não a viu.', status: 500 };
-  return { item };
+  if (item) return { item };
+  return {
+    item: {
+      id: data.id,
+      player_id: player.id,
+      display_name: player.display_name,
+      kind,
+      media_type: mediaType,
+      drive_file_id: file.id,
+      points: kind === 'challenge' ? 1 : 0,
+      challenge_id: kind === 'challenge' ? challengeId : null,
+      challenge_title: null,
+      created_at: new Date().toISOString(),
+    },
+  };
 }
 
 export async function deleteSubmission(id: string) {

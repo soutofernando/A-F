@@ -14,6 +14,26 @@ type Filter = 'tudo' | 'desafios' | 'soltas';
 
 const FEED_COLUMNS = 'id, player_id, display_name, kind, media_type, drive_file_id, points, challenge_id, challenge_title, created_at';
 
+function feedFromChange(row: unknown): FestaFeedItem | null {
+  if (!row || typeof row !== 'object') return null;
+  const value = row as Partial<FestaFeedItem>;
+  if (!value.id || !value.player_id || !value.drive_file_id || !value.created_at) return null;
+  if (value.kind !== 'challenge' && value.kind !== 'gallery') return null;
+  if (value.media_type !== 'image' && value.media_type !== 'video') return null;
+  return {
+    id: value.id,
+    player_id: value.player_id,
+    display_name: value.display_name || 'Convidado',
+    kind: value.kind,
+    media_type: value.media_type,
+    drive_file_id: value.drive_file_id,
+    points: Number(value.points) || 0,
+    challenge_id: value.challenge_id ?? null,
+    challenge_title: value.challenge_title ?? null,
+    created_at: value.created_at,
+  };
+}
+
 function sameFeed(a: FestaFeedItem[], b: FestaFeedItem[]) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i += 1) {
@@ -136,15 +156,30 @@ export function FestaApp({
       }
     };
 
-    const timer = window.setInterval(() => void pull(), 8000);
+    const timer = window.setInterval(() => void pull(), 30000);
     const onVisible = () => {
       if (!document.hidden) void pull();
     };
     document.addEventListener('visibilitychange', onVisible);
     const channel = supabase
       .channel('festa-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'festa_feed' }, () => void pull())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'festa_challenges' }, () => void pull())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'festa_feed' }, (payload) => {
+        const item = feedFromChange(payload.new);
+        if (!item) return;
+        setFeed((current) => (current.some((row) => row.id === item.id) ? current : [item, ...current]));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'festa_feed' }, (payload) => {
+        const item = feedFromChange(payload.new);
+        if (!item) return;
+        setFeed((current) => current.map((row) => (row.id === item.id ? item : row)));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'festa_feed' }, (payload) => {
+        const id = payload.old && typeof payload.old === 'object' && 'id' in payload.old
+          ? String(payload.old.id)
+          : '';
+        if (!id) return;
+        setFeed((current) => current.filter((row) => row.id !== id));
+      })
       .subscribe();
 
     return () => {

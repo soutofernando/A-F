@@ -1,7 +1,19 @@
 import { mediaFromFile, type FestaMedia } from '@/lib/festa/media';
 import type { FestaFeedItem } from '@/lib/festa/types';
 
-export class FestaUploadError extends Error {}
+export class FestaUploadError extends Error {
+  constructor(message: string, readonly retryable = false) {
+    super(message);
+  }
+}
+
+function pause(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function permanentMessage(message: string) {
+  return /já ganhou|não entendi|Entre |Escreva|Escolha um desafio|não está mais|passa de|Use uma foto|Vídeo pode|não entrou neste/i.test(message);
+}
 
 const PHOTO_EDGE = 1600;
 
@@ -62,51 +74,73 @@ export async function sendFestaMedia(input: {
     throw new FestaUploadError('Use uma foto JPG, PNG ou WEBP, ou um vídeo MP4 ou MOV.');
   }
   const named = namedFile(file, media);
+  let fileId: string | null = null;
+  let folderShared = false;
+  let lastError = new FestaUploadError('Não consegui enviar. Tente outra vez.', true);
 
-  try {
-    const prepared = await fetch('/api/festa/prepare', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: input.token,
-        kind: input.kind,
-        challengeId: input.challengeId ?? null,
-        fileName: named.name,
-        byteSize: named.size,
-      }),
-    });
-    if (!prepared.ok) throw new FestaUploadError(await readError(prepared));
-    const ticket = await prepared.json() as { uploadUrl: string; contentType: string };
-    const contentType = ticket.contentType || named.type;
-    input.onPhase?.('send');
-    const uploaded = await fetch(ticket.uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-        'Content-Range': `bytes 0-${named.size - 1}/${named.size}`,
-      },
-      body: named,
-    });
-    if (!uploaded.ok) throw new FestaUploadError('A foto não chegou ao Drive. Tente outra vez.');
-    const saved = await uploaded.json().catch(() => null) as { id?: string } | null;
-    if (!saved?.id) throw new FestaUploadError('A foto não chegou ao Drive. Tente outra vez.');
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      if (!fileId) {
+        input.onPhase?.('prepare');
+        const prepared = await fetch('/api/festa/prepare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: input.token,
+            kind: input.kind,
+            challengeId: input.challengeId ?? null,
+            fileName: named.name,
+            byteSize: named.size,
+          }),
+        });
+        if (!prepared.ok) {
+          const message = await readError(prepared);
+          throw new FestaUploadError(message, prepared.status >= 500 && !permanentMessage(message));
+        }
+        const ticket = await prepared.json() as { uploadUrl: string; contentType: string; shared?: boolean };
+        folderShared = ticket.shared === true;
+        const contentType = ticket.contentType || named.type;
+        input.onPhase?.('send');
+        const uploaded = await fetch(ticket.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': contentType,
+            'Content-Range': `bytes 0-${named.size - 1}/${named.size}`,
+          },
+          body: named,
+        });
+        if (!uploaded.ok) throw new FestaUploadError('A foto não chegou ao Drive. Tente outra vez.', true);
+        const saved = await uploaded.json().catch(() => null) as { id?: string } | null;
+        if (!saved?.id) throw new FestaUploadError('A foto não chegou ao Drive. Tente outra vez.', true);
+        fileId = saved.id;
+      }
 
-    input.onPhase?.('save');
-    const committed = await fetch('/api/festa/commit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: input.token,
-        fileId: saved.id,
-        kind: input.kind,
-        challengeId: input.challengeId ?? null,
-      }),
-    });
-    if (!committed.ok) throw new FestaUploadError(await readError(committed));
-    const data = await committed.json() as { item: FestaFeedItem };
-    return data.item;
-  } catch (error) {
-    if (error instanceof FestaUploadError) throw error;
-    throw new FestaUploadError('Não consegui enviar. Tente outra vez.');
+      input.onPhase?.('save');
+      const committed = await fetch('/api/festa/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: input.token,
+          fileId,
+          kind: input.kind,
+          challengeId: input.challengeId ?? null,
+          folderShared,
+        }),
+      });
+      if (!committed.ok) {
+        const message = await readError(committed);
+        const retryable = (committed.status >= 500 || committed.status === 429) && !permanentMessage(message);
+        throw new FestaUploadError(message, retryable);
+      }
+      const data = await committed.json() as { item: FestaFeedItem };
+      return data.item;
+    } catch (error) {
+      lastError = error instanceof FestaUploadError
+        ? error
+        : new FestaUploadError('Não consegui enviar. Tente outra vez.', true);
+      if (!lastError.retryable || attempt === 2) throw lastError;
+      await pause(700 * (attempt + 1) + Math.floor(Math.random() * 400));
+    }
   }
+  throw lastError;
 }

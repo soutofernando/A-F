@@ -432,6 +432,8 @@
   width: 100%;
   background: #E4DDD2;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 180px 180px;
 }
 
 .festa-cell img,
