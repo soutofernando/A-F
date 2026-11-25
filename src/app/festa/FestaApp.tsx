@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { Logo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/client';
 import { festaImageUrl, festaVideoEmbed } from '@/lib/festa/media';
@@ -121,6 +121,7 @@ export function FestaApp({
   const libraryRef = useRef<HTMLInputElement>(null);
   const galleryCameraRef = useRef<HTMLInputElement>(null);
   const galleryLibraryRef = useRef<HTMLInputElement>(null);
+  const galleryVideoCameraRef = useRef<HTMLInputElement>(null);
   const galleryVideoRef = useRef<HTMLInputElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -481,6 +482,7 @@ export function FestaApp({
                 onOpen={openGallery}
                 onCamera={() => { setPicking(false); galleryCameraRef.current?.click(); }}
                 onLibrary={() => { setPicking(false); galleryLibraryRef.current?.click(); }}
+                onRecordVideo={() => { setPicking(false); galleryVideoCameraRef.current?.click(); }}
                 onVideo={() => { setPicking(false); galleryVideoRef.current?.click(); }}
                 onClose={() => setPicking(false)}
               />
@@ -534,6 +536,7 @@ export function FestaApp({
                 onOpen={openGallery}
                 onCamera={() => { setPicking(false); galleryCameraRef.current?.click(); }}
                 onLibrary={() => { setPicking(false); galleryLibraryRef.current?.click(); }}
+                onRecordVideo={() => { setPicking(false); galleryVideoCameraRef.current?.click(); }}
                 onVideo={() => { setPicking(false); galleryVideoRef.current?.click(); }}
                 onClose={() => setPicking(false)}
               />
@@ -595,6 +598,7 @@ export function FestaApp({
       <input ref={libraryRef} className="festa-file" type="file" accept="image/*" onChange={onChallengeFiles} />
       <input ref={galleryCameraRef} className="festa-file" type="file" accept="image/*" capture="environment" onChange={onGalleryFiles} />
       <input ref={galleryLibraryRef} className="festa-file" type="file" accept="image/*" multiple onChange={onGalleryFiles} />
+      <input ref={galleryVideoCameraRef} className="festa-file" type="file" accept="video/*" capture="environment" onChange={onGalleryFiles} />
       <input ref={galleryVideoRef} className="festa-file" type="file" accept="video/*" multiple onChange={onGalleryFiles} />
 
       {viewer && (
@@ -652,6 +656,52 @@ function phaseText(phase: string) {
   return 'Enviando…';
 }
 
+function ActionIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <ActionIcon>
+      <path d="M4.5 8.5h2.2l1.4-2h7.8l1.4 2H19.5a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18v-8a1.5 1.5 0 0 1 1.5-1.5z" />
+      <circle cx="12" cy="13.2" r="3.1" />
+    </ActionIcon>
+  );
+}
+
+function RecordIcon() {
+  return (
+    <ActionIcon>
+      <rect x="3" y="6.5" width="12.5" height="11" rx="1.6" />
+      <path d="M15.5 10.2 21 7.4v9.2l-5.5-2.8z" />
+      <circle cx="9.2" cy="12" r="1.7" fill="currentColor" stroke="none" />
+    </ActionIcon>
+  );
+}
+
+function PhotoIcon() {
+  return (
+    <ActionIcon>
+      <rect x="3.5" y="5" width="17" height="14" rx="1.6" />
+      <circle cx="8.2" cy="9.2" r="1.3" fill="currentColor" stroke="none" />
+      <path d="m4.2 16.2 4.2-3.6 3 2.4 2.4-2 5.8 4.6" />
+    </ActionIcon>
+  );
+}
+
+function FilmIcon() {
+  return (
+    <ActionIcon>
+      <rect x="3.5" y="5" width="17" height="14" rx="1.6" />
+      <path d="M8 5v14M16 5v14M3.5 9.5h4.5M16 9.5h4.5M3.5 14.5h4.5M16 14.5h4.5" />
+    </ActionIcon>
+  );
+}
+
 function galleryButtonLabel(busy: string, phase: string) {
   if (busy.includes('/')) return `Enviando ${busy}`;
   if (busy) return phaseText(phase);
@@ -663,6 +713,7 @@ function GallerySend({
   onOpen,
   onCamera,
   onLibrary,
+  onRecordVideo,
   onVideo,
   onClose,
 }: {
@@ -676,6 +727,7 @@ function GallerySend({
   onOpen: () => void;
   onCamera: () => void;
   onLibrary: () => void;
+  onRecordVideo: () => void;
   onVideo: () => void;
   onClose: () => void;
 }) {
@@ -683,9 +735,22 @@ function GallerySend({
     <div className="festa-send">
       {status.picking && !status.busy ? (
         <div className="festa-pick">
-          <button type="button" className="festa-go" onClick={onCamera}>Tirar agora</button>
-          <button type="button" className="festa-go festa-go-line" onClick={onLibrary}>Escolher uma foto</button>
-          <button type="button" className="festa-text" onClick={onVideo}>Enviar um vídeo</button>
+          <button type="button" className="festa-go" onClick={onCamera}>
+            <CameraIcon />
+            Tirar agora
+          </button>
+          <button type="button" className="festa-go" onClick={onRecordVideo}>
+            <RecordIcon />
+            Gravar agora
+          </button>
+          <button type="button" className="festa-go festa-go-line" onClick={onLibrary}>
+            <PhotoIcon />
+            Escolher uma foto
+          </button>
+          <button type="button" className="festa-go festa-go-line" onClick={onVideo}>
+            <FilmIcon />
+            Escolher um vídeo
+          </button>
           <button type="button" className="festa-text" onClick={onClose}>Voltar</button>
         </div>
       ) : (
