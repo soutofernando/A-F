@@ -4,12 +4,11 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 import { Logo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/client';
 import { festaImageUrl, festaVideoEmbed } from '@/lib/festa/media';
-import { pontosLabel } from '@/lib/festa/names';
 import { readPlayer, writePlayer } from '@/lib/festa/player-storage';
 import { FestaUploadError, sendFestaMedia } from '@/lib/festa/send-media';
-import type { FestaChallenge, FestaFeedItem, FestaPlayer } from '@/lib/festa/types';
+import type { FestaFeedItem, FestaPlayer } from '@/lib/festa/types';
 
-type Tab = 'desafios' | 'ranking' | 'galeria';
+type Tab = 'desafio' | 'galeria';
 type Filter = 'tudo' | 'desafios' | 'soltas';
 
 const FEED_COLUMNS = 'id, player_id, display_name, kind, media_type, drive_file_id, points, challenge_id, challenge_title, created_at';
@@ -44,42 +43,6 @@ function sameFeed(a: FestaFeedItem[], b: FestaFeedItem[]) {
   return true;
 }
 
-function sameChallenges(a: FestaChallenge[], b: FestaChallenge[]) {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i].id !== b[i].id || a[i].title !== b[i].title || a[i].hint !== b[i].hint || a[i].sort_order !== b[i].sort_order) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function rankingOf(feed: FestaFeedItem[]) {
-  const map = new Map<string, { id: string; name: string; points: number; firstAt: string }>();
-  const chronological = [...feed].sort((a, b) => a.created_at.localeCompare(b.created_at));
-  for (const item of chronological) {
-    if (item.kind !== 'challenge') continue;
-    const row = map.get(item.player_id) ?? {
-      id: item.player_id,
-      name: item.display_name,
-      points: 0,
-      firstAt: item.created_at,
-    };
-    row.name = item.display_name;
-    row.points += item.points;
-    map.set(item.player_id, row);
-  }
-  return [...map.values()].sort((a, b) => b.points - a.points || a.firstAt.localeCompare(b.firstAt) || a.name.localeCompare(b.name, 'pt'));
-}
-
-function leadLine(rows: ReturnType<typeof rankingOf>, me: string | undefined) {
-  if (rows.length === 0) return 'Ninguém pontuou ainda.';
-  const top = rows[0];
-  const points = pontosLabel(top.points);
-  if (top.id === me) return `Você está na frente, com ${points}.`;
-  return `${top.name} está na frente, com ${points}.`;
-}
-
 function Still({ src, alt, video }: { src: string; alt: string; video?: boolean }) {
   const [failed, setFailed] = useState(false);
   if (video) {
@@ -90,18 +53,15 @@ function Still({ src, alt, video }: { src: string; alt: string; video?: boolean 
 }
 
 export function FestaApp({
-  challenges: initialChallenges,
   feed: initialFeed,
 }: {
-  challenges: FestaChallenge[];
   feed: FestaFeedItem[];
 }) {
   const [ready, setReady] = useState(false);
   const [player, setPlayer] = useState<FestaPlayer | null>(null);
   const [browsing, setBrowsing] = useState(false);
-  const [tab, setTab] = useState<Tab>('desafios');
+  const [tab, setTab] = useState<Tab>('desafio');
   const [filter, setFilter] = useState<Filter>('tudo');
-  const [challenges, setChallenges] = useState(initialChallenges);
   const [feed, setFeed] = useState(initialFeed);
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState('');
@@ -126,8 +86,10 @@ export function FestaApp({
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    setPlayer(readPlayer());
+    const saved = readPlayer();
+    setPlayer(saved);
     setReady(true);
+    if (saved && !saved.challengeId) void enterRef.current(saved.displayName, saved.token);
   }, []);
 
   useEffect(() => {
@@ -137,20 +99,8 @@ export function FestaApp({
     const pull = async () => {
       if (document.hidden) return;
       const gen = ++pullGen.current;
-      const [challengeRes, feedRes] = await Promise.all([
-        supabase
-          .from('festa_challenges')
-          .select('id, title, hint, sort_order, active')
-          .eq('active', true)
-          .order('sort_order')
-          .order('created_at'),
-        supabase.from('festa_feed').select(FEED_COLUMNS).order('created_at', { ascending: false }),
-      ]);
+      const feedRes = await supabase.from('festa_feed').select(FEED_COLUMNS).order('created_at', { ascending: false });
       if (stop || gen !== pullGen.current) return;
-      if (challengeRes.data) {
-        const next = challengeRes.data as FestaChallenge[];
-        setChallenges((current) => (sameChallenges(current, next) ? current : next));
-      }
       if (feedRes.data) {
         const next = feedRes.data as FestaFeedItem[];
         setFeed((current) => (sameFeed(current, next) ? current : next));
@@ -191,20 +141,10 @@ export function FestaApp({
     };
   }, []);
 
-  const doneByChallenge = useMemo(() => {
-    const map = new Map<string, FestaFeedItem>();
-    if (!player) return map;
-    for (const item of feed) {
-      if (item.player_id === player.id && item.kind === 'challenge' && item.challenge_id) {
-        map.set(item.challenge_id, item);
-      }
-    }
-    return map;
+  const myShot = useMemo(() => {
+    if (!player) return null;
+    return feed.find((item) => item.player_id === player.id && item.kind === 'challenge') ?? null;
   }, [feed, player]);
-
-  const rows = useMemo(() => rankingOf(feed), [feed]);
-  const mine = player ? rows.find((row) => row.id === player.id)?.points ?? 0 : 0;
-  const done = doneByChallenge.size;
 
   const visible = useMemo(() => {
     if (filter === 'desafios') return feed.filter((item) => item.kind === 'challenge');
@@ -238,32 +178,51 @@ export function FestaApp({
     setFeed((current) => (current.some((row) => row.id === item.id) ? current : [item, ...current]));
   };
 
-  const join = async (name: string) => {
+  const enterRef = useRef<(name: string, token?: string) => Promise<void>>(async () => undefined);
+
+  const enter = async (name: string, token?: string) => {
     setPending(true);
     setJoinError('');
     try {
       const res = await fetch('/api/festa/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: name, token: player?.token }),
+        body: JSON.stringify({ displayName: name, token }),
       });
-      const data = await res.json().catch(() => null) as { error?: string; id?: string; token?: string; displayName?: string } | null;
-      if (!res.ok || !data?.id || !data.token || !data.displayName) {
+      const data = await res.json().catch(() => null) as {
+        error?: string;
+        id?: string;
+        token?: string;
+        displayName?: string;
+        challenge?: { id?: string; title?: string; hint?: string | null };
+      } | null;
+      if (!res.ok || !data?.id || !data.token || !data.displayName || !data.challenge?.id || !data.challenge.title) {
         setJoinError(data?.error || 'Não consegui entrar.');
         return;
       }
-      const next = { id: data.id, token: data.token, displayName: data.displayName };
+      const next = {
+        id: data.id,
+        token: data.token,
+        displayName: data.displayName,
+        challengeId: data.challenge.id,
+        challengeTitle: data.challenge.title,
+        challengeHint: data.challenge.hint ?? null,
+      };
       writePlayer(next);
       setPlayer(next);
       setBrowsing(false);
       setRenaming(false);
       setNeedName(false);
+      setTab('desafio');
     } catch {
       setJoinError('Não consegui entrar. Tente outra vez.');
     } finally {
       setPending(false);
     }
   };
+  enterRef.current = enter;
+
+  const join = (name: string) => enter(name, player?.token);
 
   const uploadFiles = async (files: File[], kind: 'challenge' | 'gallery', challengeId: string | null) => {
     if (!player) {
@@ -360,9 +319,9 @@ export function FestaApp({
       <div className="festa">
         <div className="festa-frame festa-door">
           <Logo height={54} priority />
-          <h1>A festa tem uma brincadeira.</h1>
+          <h1>Cada pessoa recebe um desafio.</h1>
           <NameForm initial="" submitLabel="Entrar" pending={pending} error={joinError} onSubmit={join} />
-          <p className="festa-note">Cada desafio vale 1 ponto. O ranking muda na hora.</p>
+          <p className="festa-note">É um só, sorteado no seu nome. Depois, a galeria continua aberta.</p>
           <button type="button" className="festa-text" onClick={() => { setBrowsing(true); setTab('galeria'); }}>
             Ver a galeria sem participar
           </button>
@@ -371,8 +330,6 @@ export function FestaApp({
     );
   }
 
-  const progress = challenges.length > 0 ? `${done} de ${challenges.length} desafios` : pontosLabel(mine);
-
   return (
     <div className="festa festa-app">
       <header className="festa-head">
@@ -380,7 +337,7 @@ export function FestaApp({
           <div>
             <Logo height={36} />
             <div className="festa-who">{player ? player.displayName : 'A festa'}</div>
-            {player && <p className="festa-progress">{progress}</p>}
+            {player && <p className="festa-progress">{myShot ? 'Desafio cumprido' : 'Um desafio'}</p>}
           </div>
           {player && !renaming && (
             <button type="button" className="festa-text" onClick={() => setRenaming(true)}>
@@ -405,122 +362,78 @@ export function FestaApp({
               />
             </div>
           )}
-          <p className="festa-live" aria-live="polite">{leadLine(rows, player?.id)}</p>
         </div>
       </header>
 
       <main className="festa-scroll">
-        {tab === 'desafios' && (
+        {tab === 'desafio' && (
           <div className="festa-frame">
-            {challenges.length === 0 && <p className="festa-note">Os desafios ainda não foram publicados.</p>}
-            <ol className="festa-list">
-              {challenges.map((challenge) => {
-                const shot = doneByChallenge.get(challenge.id);
-                return (
-                  <li key={challenge.id} className={shot ? 'festa-mission is-done' : 'festa-mission'}>
-                    {shot && (
-                      <button type="button" className="festa-shot" onClick={() => setViewerId(shot.id)}>
-                        <Still src={localShots[shot.id] ?? festaImageUrl(shot.drive_file_id, 800)} alt={challenge.title} />
-                      </button>
-                    )}
-                    <div>
-                      <h2>{challenge.title}</h2>
-                      {!shot && challenge.hint && <p>{challenge.hint}</p>}
-                      {shot ? (
-                        <p className="festa-point">1 ponto</p>
-                      ) : (
-                        <div className="festa-actions">
-                          <button
-                            type="button"
-                            className="festa-go"
-                            disabled={Boolean(busy)}
-                            onClick={() => {
-                              challengeTarget.current = challenge.id;
-                              if (!player) {
-                                setNeedName(true);
-                                return;
-                              }
-                              cameraRef.current?.click();
-                            }}
-                          >
-                            {busy === challenge.id ? 'Enviando…' : 'Tirar foto'}
-                          </button>
-                          <button
-                            type="button"
-                            className="festa-text"
-                            disabled={Boolean(busy)}
-                            onClick={() => {
-                              challengeTarget.current = challenge.id;
-                              if (!player) {
-                                setNeedName(true);
-                                return;
-                              }
-                              libraryRef.current?.click();
-                            }}
-                          >
-                            Já tenho a foto
-                          </button>
-                        </div>
-                      )}
-                      {busy === challenge.id && <p className="festa-wait" role="status">{phaseText(phase)}</p>}
-                      {uploadError && uploadAt === challenge.id && (
-                        <p className="festa-error">{uploadError}</p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-            <section className="festa-loose">
-              <h2>A galeria da noite</h2>
-              <p>Mande fotos e vídeos do casamento sem entrar no ranking.</p>
-              {needName && !player && (
+            {!player && (
+              <>
                 <NameForm initial="" submitLabel="Entrar" pending={pending} error={joinError} onSubmit={join} />
-              )}
-              <GallerySend
-                status={galleryStatus}
-                onOpen={openGallery}
-                onCamera={() => { setPicking(false); galleryCameraRef.current?.click(); }}
-                onLibrary={() => { setPicking(false); galleryLibraryRef.current?.click(); }}
-                onRecordVideo={() => { setPicking(false); galleryVideoCameraRef.current?.click(); }}
-                onVideo={() => { setPicking(false); galleryVideoRef.current?.click(); }}
-                onClose={() => setPicking(false)}
-              />
-            </section>
-          </div>
-        )}
-
-        {tab === 'ranking' && (
-          <div className="festa-frame">
-            {rows.length === 0 ? (
-              <p className="festa-note">O ranking começa na primeira foto.</p>
-            ) : (
-              <ol className="festa-rank">
-                {rows.map((row, index) => {
-                  const mineRow = row.id === player?.id;
-                  if (index === 0) {
-                    return (
-                      <li key={row.id} className={mineRow ? 'is-lead is-me' : 'is-lead'}>
-                        <div className="festa-lead-score">{row.points}</div>
-                        <div className="festa-lead-name">
-                          {row.name}
-                          {mineRow && <em className="festa-you">você</em>}
-                        </div>
-                      </li>
-                    );
-                  }
-                  return (
-                    <li key={row.id} className={mineRow ? 'is-me' : undefined}>
-                      <span className="festa-place">{index + 1}</span>
-                      <span className="festa-rank-name">
-                        {row.name}
-                        {mineRow && <em className="festa-you">você</em>}
-                      </span>
-                      <span className="festa-rank-points">{pontosLabel(row.points)}</span>
-                    </li>
-                  );
-                })}
-              </ol>
+                <p className="festa-note">Cada pessoa recebe um desafio.</p>
+              </>
+            )}
+            {player && !player.challengeId && (
+              <p className="festa-note">{joinError || 'Sorteando o seu desafio…'}</p>
+            )}
+            {player && player.challengeId && (
+              <article className={myShot ? 'festa-mission is-done' : 'festa-mission'}>
+                {myShot && (
+                  <button type="button" className="festa-shot" onClick={() => setViewerId(myShot.id)}>
+                    <Still
+                      src={localShots[myShot.id] ?? festaImageUrl(myShot.drive_file_id, 800)}
+                      alt={player.challengeTitle}
+                    />
+                  </button>
+                )}
+                <div>
+                  <h2>{player.challengeTitle}</h2>
+                  {!myShot && player.challengeHint && <p>{player.challengeHint}</p>}
+                  {myShot ? (
+                    <>
+                      <p className="festa-point">Desafio cumprido.</p>
+                      <p>Pode continuar mandando fotos e vídeos na galeria.</p>
+                      <button
+                        type="button"
+                        className="festa-go"
+                        onClick={() => { setTab('galeria'); setPicking(true); }}
+                      >
+                        Ir para a galeria
+                      </button>
+                    </>
+                  ) : (
+                    <div className="festa-actions">
+                      <button
+                        type="button"
+                        className="festa-go"
+                        disabled={Boolean(busy)}
+                        onClick={() => {
+                          challengeTarget.current = player.challengeId;
+                          cameraRef.current?.click();
+                        }}
+                      >
+                        {busy === player.challengeId ? 'Enviando…' : 'Tirar foto'}
+                      </button>
+                      <button
+                        type="button"
+                        className="festa-text"
+                        disabled={Boolean(busy)}
+                        onClick={() => {
+                          challengeTarget.current = player.challengeId;
+                          libraryRef.current?.click();
+                        }}
+                      >
+                        Já tenho a foto
+                      </button>
+                    </div>
+                  )}
+                  {busy === player.challengeId && <p className="festa-wait" role="status">{phaseText(phase)}</p>}
+                  {uploadError && uploadAt === player.challengeId && (
+                    <p className="festa-error">{uploadError}</p>
+                  )}
+                </div>
+              </article>
             )}
           </div>
         )}
@@ -528,6 +441,7 @@ export function FestaApp({
         {tab === 'galeria' && (
           <div className="festa-gallery">
             <div className="festa-gallery-bar">
+              <p className="festa-note">Fotos e vídeos da festa. O desafio é só um.</p>
               {needName && !player && (
                 <NameForm initial="" submitLabel="Entrar" pending={pending} error={joinError} onSubmit={join} />
               )}
@@ -576,8 +490,7 @@ export function FestaApp({
       <nav className="festa-tabs" aria-label="Festa">
         <div className="festa-frame festa-tabs-grid" role="tablist">
           {([
-            ['desafios', 'desafios'],
-            ['ranking', 'ranking'],
+            ['desafio', 'desafio'],
             ['galeria', 'galeria'],
           ] as const).map(([id, label]) => (
             <button

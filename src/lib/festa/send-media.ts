@@ -12,7 +12,7 @@ function pause(ms: number) {
 }
 
 function permanentMessage(message: string) {
-  return /já ganhou|não entendi|Entre |Escreva|Escolha um desafio|não está mais|passa de|Use uma foto|Vídeo pode|não entrou neste/i.test(message);
+  return /já ganhou|já cumpriu|não é o seu|não entendi|Entre |Escreva|Escolha um desafio|não está mais|passa de|Use uma foto|Vídeo pode|não entrou neste/i.test(message);
 }
 
 const PHOTO_EDGE = 1600;

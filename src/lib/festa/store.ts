@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { beginDirectUpload, deleteDriveFile, driveIsReady, readDriveFile, shareDriveFile } from '@/lib/festa/drive';
 import { IMAGE_MAX_BYTES, VIDEO_MAX_BYTES, mediaFromName } from '@/lib/festa/media';
 import { cleanDisplayName, cleanToken } from '@/lib/festa/names';
-import type { FestaFeedItem } from '@/lib/festa/types';
+import type { FestaDraw, FestaFeedItem } from '@/lib/festa/types';
 
 type Fail = { error: string; status: number };
 type Admin = ReturnType<typeof createAdminClient>;
@@ -26,17 +26,96 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+type PlayerRow = {
+  id: string;
+  token: string;
+  display_name: string;
+  challenge_id: string | null;
+};
+
 async function playerByToken(admin: Admin, token: string) {
   const { data } = await admin
     .from('festa_players')
-    .select('id, token, display_name')
+    .select('id, token, display_name, challenge_id')
     .eq('token', token)
     .maybeSingle();
-  return data;
+  return data as PlayerRow | null;
+}
+
+async function challengeById(admin: Admin, id: string) {
+  const { data } = await admin
+    .from('festa_challenges')
+    .select('id, title, hint')
+    .eq('id', id)
+    .maybeSingle();
+  return data as FestaDraw | null;
+}
+
+async function drawChallenge(admin: Admin, playerId: string): Promise<FestaDraw | Fail> {
+  const { data: current, error: currentError } = await admin
+    .from('festa_players')
+    .select('challenge_id')
+    .eq('id', playerId)
+    .maybeSingle();
+  if (currentError) return drawFailed(currentError);
+  if (current?.challenge_id) {
+    const saved = await challengeById(admin, current.challenge_id);
+    if (saved) return saved;
+  }
+
+  const [{ data: challenges, error: challengeError }, { data: taken, error: takenError }] = await Promise.all([
+    admin.from('festa_challenges').select('id, title, hint').eq('active', true),
+    admin.from('festa_players').select('challenge_id').not('challenge_id', 'is', null),
+  ]);
+  if (challengeError) return drawFailed(challengeError);
+  if (takenError) return drawFailed(takenError);
+
+  const used = new Set((taken ?? []).map((row) => row.challenge_id).filter((id): id is string => Boolean(id)));
+  const open = ((challenges ?? []) as FestaDraw[]).filter((row) => !used.has(row.id));
+  if (open.length === 0) return { error: 'Os desafios desta noite já foram todos sorteados.', status: 409 };
+
+  for (let attempt = 0; attempt < 6 && open.length > 0; attempt += 1) {
+    const pick = open.splice(Math.floor(Math.random() * open.length), 1)[0];
+    const { data, error } = await admin
+      .from('festa_players')
+      .update({ challenge_id: pick.id })
+      .eq('id', playerId)
+      .is('challenge_id', null)
+      .select('challenge_id')
+      .maybeSingle();
+    if (!error && data?.challenge_id) return pick;
+    if (error && error.code !== '23505') return drawFailed(error);
+    const { data: again } = await admin
+      .from('festa_players')
+      .select('challenge_id')
+      .eq('id', playerId)
+      .maybeSingle();
+    if (again?.challenge_id) {
+      const saved = await challengeById(admin, again.challenge_id);
+      if (saved) return saved;
+    }
+  }
+  return { error: 'Não consegui sortear o desafio. Tente outra vez.', status: 500 };
+}
+
+function drawFailed(error: { message?: string; code?: string }): Fail {
+  const message = error.message ?? '';
+  console.error('festa draw', error.code, message);
+  if (message.includes('challenge_id')) return { error: 'A brincadeira ainda está sendo preparada.', status: 500 };
+  return { error: 'Não consegui sortear o desafio.', status: 500 };
+}
+
+async function withChallenge(
+  admin: Admin,
+  player: { id: string; token: string; display_name: string },
+): Promise<{ id: string; token: string; displayName: string; challenge: FestaDraw } | Fail> {
+  const challenge = await drawChallenge(admin, player.id);
+  if ('error' in challenge) return challenge;
+  return { id: player.id, token: player.token, displayName: player.display_name, challenge };
 }
 
 export async function joinPlayer(body: unknown): Promise<
-  { id: string; token: string; displayName: string } | Fail
+  { id: string; token: string; displayName: string; challenge: FestaDraw } | Fail
 > {
   const displayName = cleanDisplayName(asRecord(body).displayName);
   if (!displayName) return { error: 'Escreva seu nome, com pelo menos 2 letras.', status: 400 };
@@ -55,7 +134,7 @@ export async function joinPlayer(body: unknown): Promise<
           .eq('id', existing.id);
         if (error) return { error: 'Não consegui trocar o nome.', status: 500 };
       }
-      return { id: existing.id, token: existing.token, displayName };
+      return withChallenge(admin, { ...existing, display_name: displayName });
     }
   }
 
@@ -66,7 +145,7 @@ export async function joinPlayer(body: unknown): Promise<
     .select('id, token, display_name')
     .single();
   if (error || !data) return { error: 'Não consegui entrar na brincadeira.', status: 500 };
-  return { id: data.id, token: data.token, displayName: data.display_name };
+  return withChallenge(admin, data);
 }
 
 export async function prepareUpload(body: unknown, origin: string): Promise<
@@ -113,6 +192,7 @@ export async function prepareUpload(body: unknown, origin: string): Promise<
       .eq('id', challengeId)
       .maybeSingle();
     if (!challenge?.active) return { error: 'Esse desafio não está mais na lista.', status: 404 };
+    if (player.challenge_id !== challenge.id) return { error: 'Esse não é o seu desafio.', status: 403 };
     challengeTitle = challenge.title;
     const { data: existing } = await admin
       .from('festa_submissions')
@@ -121,7 +201,7 @@ export async function prepareUpload(body: unknown, origin: string): Promise<
       .eq('challenge_id', challengeId)
       .eq('kind', 'challenge')
       .maybeSingle();
-    if (existing) return { error: 'Você já ganhou o ponto deste desafio.', status: 409 };
+    if (existing) return { error: 'Você já cumpriu o seu desafio. A galeria continua aberta.', status: 409 };
   }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -191,7 +271,9 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
   if (!player) return { error: 'Entre de novo com seu nome.', status: 401 };
 
   const challengeId = typeof record.challengeId === 'string' ? record.challengeId : '';
-  if (kind === 'challenge' && !isUuid(challengeId)) return { error: 'Escolha um desafio.', status: 400 };
+  if (kind === 'challenge' && (!isUuid(challengeId) || player.challenge_id !== challengeId)) {
+    return { error: 'Esse não é o seu desafio.', status: 403 };
+  }
 
   let file;
   try {
@@ -254,10 +336,10 @@ export async function commitUpload(body: unknown): Promise<{ item: FestaFeedItem
     }
     if (error?.code === '23505' && kind === 'challenge') {
       await deleteDriveFile(fileId).catch(() => undefined);
-      return { error: 'Você já ganhou o ponto deste desafio.', status: 409 };
+      return { error: 'Você já cumpriu o seu desafio. A galeria continua aberta.', status: 409 };
     }
     console.error('festa commit', error?.code, error?.message);
-    return { error: 'A foto está no Drive, mas não entrou no ranking.', status: 500 };
+    return { error: 'A foto está no Drive, mas não entrou na galeria.', status: 500 };
   }
 
   const item = await feedItem(admin, data.id);

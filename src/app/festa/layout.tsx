@@ -3,7 +3,7 @@ import './festa.css';
 
 export const metadata: Metadata = {
   title: 'Desafios da festa · Alicia & Fernando',
-  description: 'Fotos da festa. Cada desafio vale 1 ponto, e a galeria é de todo mundo.',
+  description: 'Cada pessoa recebe um desafio. Depois, a galeria continua aberta.',
   robots: { index: false, follow: false },
 };
 

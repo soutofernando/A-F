@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/server';
 import { FestaQrCard } from '@/components/admin/FestaQrCard';
 import {
   Card,
-  Checkbox,
   Field,
   PageHeader,
   Stat,
@@ -16,9 +15,7 @@ import {
 import {
   createChallenge,
   disconnectDriveAction,
-  removeChallenge,
   removeSubmissionAction,
-  updateChallenge,
 } from './actions';
 import { ConfirmSubmit } from './confirm-submit';
 
@@ -108,19 +105,13 @@ export default async function AdminFestaPage({
   const scoredPeople = new Set((scored.data ?? []).map((row) => row.player_id)).size;
   const submissions = (recent.data ?? []) as SubmissionRow[];
   const nextOrder = ((challenges.data ?? []).reduce((max, row) => Math.max(max, row.sort_order), 0) || 0) + 10;
-  const counts = new Map<string, number>();
-  const { data: challengeIds } = await supabase.from('festa_submissions').select('challenge_id').eq('kind', 'challenge');
-  for (const row of challengeIds ?? []) {
-    if (!row.challenge_id) continue;
-    counts.set(row.challenge_id, (counts.get(row.challenge_id) ?? 0) + 1);
-  }
 
   return (
     <div>
       <PageHeader
         kicker="Festa"
         title="brincadeira"
-        subtitle="Desafios com foto, ranking ao vivo e a galeria dos convidados."
+        subtitle="Um desafio sorteado por pessoa. Depois, a galeria continua aberta."
       />
 
       {(driveNote || aviso === 'oculto') && (
@@ -134,7 +125,7 @@ export default async function AdminFestaPage({
       <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 22 }}>
         <Stat label="Fotos" value={photos.count ?? 0} />
         <Stat label="Vídeos" value={videos.count ?? 0} />
-        <Stat label="Nomes" value={players.count ?? 0} meta={`${scoredPeople} no ranking`} />
+        <Stat label="Nomes" value={players.count ?? 0} meta={`${scoredPeople} cumpriram`} />
       </div>
 
       <Card title="QR dos convidados" subtitle="Imprima e deixe na entrada, nas mesas ou no convite.">
@@ -214,41 +205,19 @@ export default async function AdminFestaPage({
         </div>
       </Card>
 
-      <Card title="Novo desafio" subtitle="Cada convidado pode completar o desafio uma vez. Essa foto vale 1 ponto.">
+      <Card
+        title="Desafios"
+        subtitle={`${(challenges.data ?? []).filter((row) => row.active).length} no sorteio. Cada nome recebe um, e ele não se repete.`}
+      >
         <form action={createChallenge} style={{ display: 'grid', gap: 14, maxWidth: 560 }}>
-          <Field label="Desafio" name="title" required placeholder="Uma foto com os noivos" />
-          <TextField label="Como fazer" name="hint" placeholder="Os dois juntos, do jeito que encontrarem." />
+          <Field label="Mais um desafio" name="title" required placeholder="Uma foto com a banda" />
+          <TextField label="Como fazer" name="hint" placeholder="Qualquer um da banda, tocando ou no intervalo." />
           <Field label="Ordem" name="sort_order" type="number" defaultValue={nextOrder} />
           <SubmitButton variant="gold">adicionar desafio</SubmitButton>
         </form>
       </Card>
 
-      {(challenges.data ?? []).map((challenge) => (
-        <Card key={challenge.id} title={challenge.title} subtitle={`${counts.get(challenge.id) ?? 0} foto(s)`}>
-          <form action={updateChallenge} style={{ display: 'grid', gap: 14, maxWidth: 560 }}>
-            <input type="hidden" name="id" value={challenge.id} />
-            <Field label="Desafio" name="title" required defaultValue={challenge.title} />
-            <TextField label="Como fazer" name="hint" defaultValue={challenge.hint} />
-            <Field label="Ordem" name="sort_order" type="number" defaultValue={challenge.sort_order} />
-            <Checkbox label="Visível para os convidados" name="active" defaultChecked={challenge.active} />
-            {!challenge.active && (
-              <p className="italic" style={{ color: 'rgba(239,231,219,.55)' }}>Fora da lista dos convidados.</p>
-            )}
-            <SubmitButton variant="gold">salvar</SubmitButton>
-          </form>
-          <form action={removeChallenge} style={{ marginTop: 14 }}>
-            <input type="hidden" name="id" value={challenge.id} />
-            <ConfirmSubmit
-              label={(counts.get(challenge.id) ?? 0) > 0 ? 'ocultar' : 'apagar'}
-              message={(counts.get(challenge.id) ?? 0) > 0
-                ? 'Este desafio já tem fotos. Ele sai da lista e as fotos ficam na galeria.'
-                : 'Apagar este desafio?'}
-            />
-          </form>
-        </Card>
-      ))}
-
-      <Card title="Envios" subtitle="Apagar tira a foto da galeria, o ponto do ranking e o arquivo do Drive.">
+      <Card title="Envios" subtitle="Apagar tira a foto da galeria e o arquivo do Drive.">
         <div style={{ display: 'grid', gap: 14 }}>
           {submissions.length === 0 && (
             <p className="italic" style={{ color: 'rgba(239,231,219,.55)' }}>Ninguém enviou nada ainda.</p>
@@ -282,7 +251,7 @@ export default async function AdminFestaPage({
                 </div>
                 <form action={removeSubmissionAction}>
                   <input type="hidden" name="id" value={row.id} />
-                  <ConfirmSubmit label="apagar" message="Apagar esta foto da galeria, do ranking e do Drive?" />
+                  <ConfirmSubmit label="apagar" message="Apagar esta foto da galeria e do Drive?" />
                 </form>
               </article>
             );

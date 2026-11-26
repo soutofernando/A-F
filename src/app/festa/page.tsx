@@ -1,6 +1,6 @@
 import { Logo } from '@/components/Logo';
 import { createClient } from '@/lib/supabase/server';
-import type { FestaChallenge, FestaFeedItem } from '@/lib/festa/types';
+import type { FestaFeedItem } from '@/lib/festa/types';
 import { FestaApp } from './FestaApp';
 
 export const dynamic = 'force-dynamic';
@@ -9,24 +9,11 @@ const FEED_COLUMNS = 'id, player_id, display_name, kind, media_type, drive_file_
 
 export default async function FestaPage() {
   const supabase = await createClient();
-  const [challenges, feed] = await Promise.all([
-    supabase
-      .from('festa_challenges')
-      .select('id, title, hint, sort_order, active')
-      .eq('active', true)
-      .order('sort_order')
-      .order('created_at'),
-    supabase.from('festa_feed').select(FEED_COLUMNS).order('created_at', { ascending: false }),
-  ]);
+  const feed = await supabase.from('festa_feed').select(FEED_COLUMNS).order('created_at', { ascending: false });
 
-  if (challenges.error || feed.error) return <FestaDown />;
+  if (feed.error) return <FestaDown />;
 
-  return (
-    <FestaApp
-      challenges={(challenges.data ?? []) as FestaChallenge[]}
-      feed={(feed.data ?? []) as FestaFeedItem[]}
-    />
-  );
+  return <FestaApp feed={(feed.data ?? []) as FestaFeedItem[]} />;
 }
 
 function FestaDown() {

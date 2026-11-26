@@ -67,19 +67,19 @@ async function renderPoster(url: string) {
   y += 110;
 
   ctx.font = 'italic 46px Georgia, "Times New Roman", serif';
-  for (const line of ['Aponte a câmera para o código.', 'Tire a foto de cada desafio.']) {
+  for (const line of ['Aponte a câmera para o código.', 'Coloque seu nome e entre.']) {
     ctx.fillText(line, center, y);
     y += 64;
   }
 
   ctx.fillStyle = GOLD;
   ctx.font = 'italic 52px Georgia, "Times New Roman", serif';
-  ctx.fillText('Cada foto publicada vale 1 ponto.', center, y + 8);
+  ctx.fillText('Você recebe um desafio.', center, y + 8);
   y += 78;
 
   ctx.fillStyle = INK;
   ctx.font = 'italic 36px Georgia, "Times New Roman", serif';
-  ctx.fillText('O ranking muda na hora.', center, y);
+  ctx.fillText('Depois, a galeria continua aberta.', center, y);
   y += 48;
 
   const qrSize = 500;

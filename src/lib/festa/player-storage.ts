@@ -12,7 +12,14 @@ export function readPlayer(): FestaPlayer | null {
     const token = cleanToken(parsed.token);
     const displayName = cleanDisplayName(parsed.displayName);
     if (!parsed.id || !token || !displayName) return null;
-    return { id: parsed.id, token, displayName };
+    return {
+      id: parsed.id,
+      token,
+      displayName,
+      challengeId: typeof parsed.challengeId === 'string' ? parsed.challengeId : '',
+      challengeTitle: typeof parsed.challengeTitle === 'string' ? parsed.challengeTitle : '',
+      challengeHint: typeof parsed.challengeHint === 'string' ? parsed.challengeHint : null,
+    };
   } catch {
     return null;
   }

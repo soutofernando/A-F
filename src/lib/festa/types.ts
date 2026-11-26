@@ -19,8 +19,17 @@ export type FestaFeedItem = {
   created_at: string;
 };
 
+export type FestaDraw = {
+  id: string;
+  title: string;
+  hint: string | null;
+};
+
 export type FestaPlayer = {
   id: string;
   token: string;
   displayName: string;
+  challengeId: string;
+  challengeTitle: string;
+  challengeHint: string | null;
 };
